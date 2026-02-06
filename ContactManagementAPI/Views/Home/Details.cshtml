@@ -1,0 +1,183 @@
+@model ContactManagementAPI.Models.Contact
+@{
+    ViewData["Title"] = $"Contact - {Model.FirstName} {Model.LastName}";
+}
+
+<div class="details-container">
+    <div class="details-header">
+        <a href="/home/index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Contacts
+        </a>
+        <h2>@Model.FirstName @Model.LastName</h2>
+        <div class="details-actions">
+            <a href="/home/edit/@Model.Id" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="/home/delete/@Model.Id" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <div class="details-left">
+            <div class="photo-section">
+                @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                {
+                    <img src="@Model.PhotoPath" alt="@Model.FirstName @Model.LastName" class="profile-photo" />
+                }
+                else
+                {
+                    <div class="photo-placeholder-large">
+                        <i class="fas fa-user"></i>
+                    </div>
+                }
+                <a href="/photo/gallery/@Model.Id" class="btn btn-primary btn-block">
+                    <i class="fas fa-images"></i> Photo Gallery
+                </a>
+            </div>
+
+            <div class="documents-section">
+                <h4><i class="fas fa-paperclip"></i> Documents</h4>
+                @if (Model.Documents.Count == 0)
+                {
+                    <p>No documents attached</p>
+                }
+                else
+                {
+                    <ul class="doc-list">
+                        @foreach (var doc in Model.Documents)
+                        {
+                            <li>
+                                <i class="fas fa-file"></i> @doc.FileName
+                                <a href="/document/download/@doc.Id/@Model.Id" class="btn btn-sm btn-info">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+                <a href="/document/list/@Model.Id" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i> Manage Documents
+                </a>
+            </div>
+        </div>
+
+        <div class="details-right">
+            <div class="info-section">
+                <h4>Basic Information</h4>
+                <div class="info-row">
+                    <span class="label">Full Name:</span>
+                    <span class="value">@Model.FirstName @Model.LastName</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.NickName))
+                {
+                    <div class="info-row">
+                        <span class="label">Nick Name:</span>
+                        <span class="value">@Model.NickName</span>
+                    </div>
+                }
+                @if (Model.Group != null)
+                {
+                    <div class="info-row">
+                        <span class="label">Group:</span>
+                        <span class="value">@Model.Group.Name</span>
+                    </div>
+                }
+            </div>
+
+            <div class="info-section">
+                <h4>Contact Information</h4>
+                @if (!string.IsNullOrEmpty(Model.Email))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fas fa-envelope"></i> Email:</span>
+                        <span class="value"><a href="mailto:@Model.Email">@Model.Email</a></span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Mobile1))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fas fa-phone"></i> Mobile 1:</span>
+                        <span class="value">@Model.Mobile1</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Mobile2))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fas fa-phone"></i> Mobile 2:</span>
+                        <span class="value">@Model.Mobile2</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Mobile3))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fas fa-phone"></i> Mobile 3:</span>
+                        <span class="value">@Model.Mobile3</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.WhatsAppNumber))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fab fa-whatsapp"></i> WhatsApp:</span>
+                        <span class="value">@Model.WhatsAppNumber</span>
+                    </div>
+                }
+            </div>
+
+            <div class="info-section">
+                <h4>Address Information</h4>
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <div class="info-row">
+                        <span class="label"><i class="fas fa-map-marker-alt"></i> Address:</span>
+                        <span class="value">@Model.Address</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.City))
+                {
+                    <div class="info-row">
+                        <span class="label">City:</span>
+                        <span class="value">@Model.City</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.State))
+                {
+                    <div class="info-row">
+                        <span class="label">State:</span>
+                        <span class="value">@Model.State</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.PostalCode))
+                {
+                    <div class="info-row">
+                        <span class="label">Postal Code:</span>
+                        <span class="value">@Model.PostalCode</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Country))
+                {
+                    <div class="info-row">
+                        <span class="label">Country:</span>
+                        <span class="value">@Model.Country</span>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.OtherDetails))
+            {
+                <div class="info-section">
+                    <h4>Other Details</h4>
+                    <div class="info-row">
+                        <span class="value">@Model.OtherDetails</span>
+                    </div>
+                </div>
+            }
+
+            <div class="info-section metadata">
+                <p><small>Created: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small></p>
+                <p><small>Updated: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,135 @@
+@model ContactManagementAPI.Models.Contact
+@{
+    ViewData["Title"] = $"Edit Contact - {Model.FirstName} {Model.LastName}";
+}
+
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="fas fa-edit"></i> Edit Contact</h2>
+    </div>
+
+    <form asp-action="Edit" method="post" class="contact-form">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <input type="hidden" asp-for="Id" />
+
+        <div class="form-section">
+            <h4>Basic Information</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="FirstName">First Name *</label>
+                    <input asp-for="FirstName" class="form-control" required />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="LastName">Last Name</label>
+                    <input asp-for="LastName" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="NickName">Nick Name</label>
+                    <input asp-for="NickName" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="GroupId">Contact Group</label>
+                    <select asp-for="GroupId" class="form-control">
+                        <option value="">-- Select Group --</option>
+                        @foreach (var group in ViewData["Groups"] as List<ContactManagementAPI.Models.ContactGroup>)
+                        {
+                            <option value="@group.Id" selected="@(Model.GroupId == group.Id)">@group.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Contact Details</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Email">Email Address</label>
+                    <input asp-for="Email" type="email" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Mobile1">Mobile 1</label>
+                    <input asp-for="Mobile1" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Mobile2">Mobile 2</label>
+                    <input asp-for="Mobile2" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Mobile3">Mobile 3</label>
+                    <input asp-for="Mobile3" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="WhatsAppNumber">WhatsApp Number</label>
+                    <input asp-for="WhatsAppNumber" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Address Information</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label asp-for="Address">Street Address</label>
+                    <input asp-for="Address" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="City">City</label>
+                    <input asp-for="City" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="State">State</label>
+                    <input asp-for="State" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="PostalCode">Postal Code</label>
+                    <input asp-for="PostalCode" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Country">Country</label>
+                    <input asp-for="Country" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Additional Information</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label asp-for="OtherDetails">Other Details / Notes</label>
+                    <textarea asp-for="OtherDetails" class="form-control" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update Contact
+            </button>
+            <a href="/home/details/@Model.Id" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
