@@ -12,12 +12,14 @@ namespace ContactManagementAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly FileUploadService _fileUploadService;
         private readonly ImportExportService _importExportService;
+        private readonly ContactStatisticsService _statisticsService;
 
-        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService, ImportExportService importExportService)
+        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService, ImportExportService importExportService, ContactStatisticsService statisticsService)
         {
             _context = context;
             _fileUploadService = fileUploadService;
             _importExportService = importExportService;
+            _statisticsService = statisticsService;
         }
 
         // GET: Home/Index - Display all contacts with search functionality
@@ -224,6 +226,22 @@ namespace ContactManagementAPI.Controllers
         }
 
         #region Import/Export Actions
+
+        // GET: Home/Dashboard - Display contact statistics
+        [RequireRight(RightsCatalog.ContactsView)]
+        public async Task<IActionResult> Dashboard()
+        {
+            var statistics = await _statisticsService.GetStatisticsAsync();
+            return View(statistics);
+        }
+
+        // GET: Home/FindDuplicates - Display potential duplicate contacts
+        [RequireRight(RightsCatalog.ContactsView)]
+        public async Task<IActionResult> FindDuplicates()
+        {
+            var duplicates = await _statisticsService.FindDuplicatesAsync();
+            return View(duplicates);
+        }
 
         // GET: Home/Import - Display import page
         [RequireRight(RightsCatalog.ContactsCreate)]

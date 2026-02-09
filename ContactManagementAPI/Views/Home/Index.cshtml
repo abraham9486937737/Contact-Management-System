@@ -16,6 +16,12 @@
     <div class="contacts-header">
         <h2>All Contacts</h2>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="/home/dashboard" class="btn btn-secondary">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="/home/findduplicates" class="btn btn-warning">
+                <i class="fas fa-copy"></i> Find Duplicates
+            </a>
             @if (UserContext.HasRight(RightsCatalog.ContactsCreate))
             {
                 <a href="/home/create" class="btn btn-primary">

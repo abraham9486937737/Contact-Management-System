@@ -1,0 +1,21 @@
+FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,OtherDetails
+John,Doe,Johnny,john.doe@example.com,+1-555-0101,+1-555-0102,,+1-555-0101,123 Main St,New York,NY,10001,USA,Senior Manager
+Jane,Smith,JS,jane.smith@example.com,+1-555-0201,+1-555-0202,,+1-555-0201,456 Oak Ave,Los Angeles,CA,90001,USA,Marketing Head
+Michael,Johnson,Mike,michael.j@example.com,+1-555-0301,+1-555-0302,,+1-555-0301,789 Pine Rd,Chicago,IL,60601,USA,Software Engineer
+Sarah,Williams,Sarah W,sarah.williams@example.com,+1-555-0401,+1-555-0402,,+1-555-0401,321 Elm St,Houston,TX,77001,USA,Project Manager
+David,Brown,DB,david.brown@example.com,+1-555-0501,+1-555-0502,,+1-555-0501,654 Maple Dr,Phoenix,AZ,85001,USA,Business Analyst
+Emily,Davis,Emily D,emily.davis@example.com,+1-555-0601,+1-555-0602,,+1-555-0601,987 Cedar Ln,Philadelphia,PA,19101,USA,HR Specialist
+Robert,Miller,Bob,robert.miller@example.com,+1-555-0701,+1-555-0702,,+1-555-0701,135 Birch Ct,San Antonio,TX,78201,USA,Financial Advisor
+Lisa,Wilson,LW,lisa.wilson@example.com,+1-555-0801,+1-555-0802,,+1-555-0801,246 Walnut St,San Diego,CA,92101,USA,Sales Executive
+James,Moore,Jim,james.moore@example.com,+1-555-0901,+1-555-0902,,+1-555-0901,369 Oak Pl,Dallas,TX,75201,USA,Operations Manager
+Patricia,Taylor,Pat,patricia.taylor@example.com,+1-555-1001,+1-555-1002,,+1-555-1001,482 Pine Ave,San Jose,CA,95101,USA,Administrative Officer
+Christopher,Anderson,Chris,chris.anderson@example.com,+1-555-1101,+1-555-1102,,+1-555-1101,571 Elm Dr,Austin,TX,78701,USA,IT Consultant
+Jennifer,Thomas,Jenny,jennifer.t@example.com,+1-555-1201,+1-555-1202,,+1-555-1201,684 Ash Ln,Jacksonville,FL,32099,USA,Customer Service Manager
+Daniel,Jackson,Dan,daniel.jackson@example.com,+1-555-1301,+1-555-1302,,+1-555-1301,795 Spruce Rd,Fort Worth,TX,76102,USA,Network Administrator
+Maria,White,Maria W,maria.white@example.com,+1-555-1401,+1-555-1402,,+1-555-1401,816 Poplar St,Columbus,OH,43085,USA,Data Analyst
+Matthew,Harris,Matt,matthew.harris@example.com,+1-555-1501,+1-555-1502,,+1-555-1501,927 Sycamore Ave,Charlotte,NC,28202,USA,Product Manager
+Linda,Martin,Linda M,linda.martin@example.com,+1-555-1601,+1-555-1602,,+1-555-1601,348 Dogwood Ct,San Francisco,CA,94102,USA,UX Designer
+Mark,Thompson,MT,mark.thompson@example.com,+1-555-1701,+1-555-1702,,+1-555-1701,459 Hickory Pl,Indianapolis,IN,46204,USA,Quality Assurance Lead
+Barbara,Garcia,Barb,barbara.garcia@example.com,+1-555-1801,+1-555-1802,,+1-555-1801,561 Magnolia Dr,Seattle,WA,98101,USA,Content Writer
+Donald,Rodriguez,Don,donald.r@example.com,+1-555-1901,+1-555-1902,,+1-555-1901,672 Laurel Ln,Denver,CO,80202,USA,DevOps Engineer
+Jessica,Lee,Jess,jessica.lee@example.com,+1-555-2001,+1-555-2002,,+1-555-2001,783 Ash St,Boston,MA,02101,USA,Finance Manager

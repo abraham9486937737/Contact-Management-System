@@ -50,6 +50,7 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<UserContextService>();
 builder.Services.AddScoped<ImportExportService>();
+builder.Services.AddScoped<ContactStatisticsService>();
 
 // Configure CORS if needed for future API consumption
 builder.Services.AddCors(options =>
