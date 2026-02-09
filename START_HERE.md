@@ -4,6 +4,16 @@ Welcome to the **Contact Management System**! This is a complete, production-rea
 
 ---
 
+## 🎉 **LATEST UPDATE: OOM Error Fixed + Mobile Access Enabled!**
+
+### 📱 **Want to use it on your phone?**
+👉 **Read [MOBILE_ACCESS_GUIDE.md](MOBILE_ACCESS_GUIDE.md)** for complete instructions!
+
+### 🔧 **Had VS Code crashes?**
+✅ **Fixed!** Memory optimizations applied. See [OOM_FIX_AND_MOBILE_SUMMARY.md](OOM_FIX_AND_MOBILE_SUMMARY.md)
+
+---
+
 ## 🚀 Quick Start (5 minutes)
 
 ### 1️⃣ **Read This First**
