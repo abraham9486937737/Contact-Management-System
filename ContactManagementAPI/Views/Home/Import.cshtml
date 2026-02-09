@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Import Contacts";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-file-import"></i> Import Contacts</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @Html.Raw(TempData["SuccessMessage"])
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @Html.Raw(TempData["ErrorMessage"])
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Instructions:</h5>
+                        <ol>
+                            <li>Download the import template (Excel or CSV format)</li>
+                            <li>Fill in your contact details following the sample format</li>
+                            <li>Upload the completed file below</li>
+                            <li>Make sure required fields (FirstName or LastName) are filled</li>
+                        </ol>
+                    </div>
+
+                    <!-- Download Templates -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-download"></i> Download Template:</h5>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("DownloadTemplate", new { type = "excel" })" class="btn btn-success">
+                                <i class="fas fa-file-excel"></i> Download Excel Template
+                            </a>
+                            <a href="@Url.Action("DownloadTemplate", new { type = "csv" })" class="btn btn-info">
+                                <i class="fas fa-file-csv"></i> Download CSV Template
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- Import Form -->
+                    <form asp-action="ImportFile" method="post" enctype="multipart/form-data" id="importForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3">
+                            <label for="fileType" class="form-label"><strong>Select File Type:</strong></label>
+                            <select class="form-select" id="fileType" name="fileType" required>
+                                <option value="">-- Choose File Type --</option>
+                                <option value="excel">Excel (.xlsx)</option>
+                                <option value="csv">CSV (.csv)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label"><strong>Select File to Import:</strong></label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv" required />
+                            <small class="form-text text-muted">Supported formats: .xlsx, .csv</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Importing will add new contacts to your existing list. It will not update or replace existing contacts.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-upload"></i> Import Contacts
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Back to Contacts
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- File Format Information -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-table"></i> Expected File Format</h5>
+                </div>
+                <div class="card-body">
+                    <p>Your import file should contain the following columns in order:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Column Name</th>
+                                    <th>Required</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>FirstName</td>
+                                    <td><span class="badge bg-warning">Required*</span></td>
+                                    <td>John</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>LastName</td>
+                                    <td><span class="badge bg-warning">Required*</span></td>
+                                    <td>Doe</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>NickName</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>Johnny</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Email</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>john.doe@example.com</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Mobile1</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>+1234567890</td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Mobile2</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>+0987654321</td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Mobile3</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>WhatsAppNumber</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>+1234567890</td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Address</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>123 Main St</td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>City</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>New York</td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>State</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>NY</td>
+                                </tr>
+                                <tr>
+                                    <td>12</td>
+                                    <td>PostalCode</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>10001</td>
+                                </tr>
+                                <tr>
+                                    <td>13</td>
+                                    <td>Country</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>USA</td>
+                                </tr>
+                                <tr>
+                                    <td>14</td>
+                                    <td>OtherDetails</td>
+                                    <td><span class="badge bg-secondary">Optional</span></td>
+                                    <td>Sample contact</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted"><small>* At least FirstName or LastName must be provided</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // File validation
+        document.getElementById('file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileType = document.getElementById('fileType').value;
+            
+            if (file) {
+                const fileName = file.name.toLowerCase();
+                
+                if (fileType === 'excel' && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                    alert('Please select an Excel file (.xlsx or .xls)');
+                    e.target.value = '';
+                } else if (fileType === 'csv' && !fileName.endsWith('.csv')) {
+                    alert('Please select a CSV file (.csv)');
+                    e.target.value = '';
+                }
+            }
+        });
+
+        // Form submission loading
+        document.getElementById('importForm').addEventListener('submit', function() {
+            const btn = this.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+            btn.disabled = true;
+        });
+    </script>
+}

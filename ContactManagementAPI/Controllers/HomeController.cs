@@ -11,11 +11,13 @@ namespace ContactManagementAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly FileUploadService _fileUploadService;
+        private readonly ImportExportService _importExportService;
 
-        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService)
+        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService, ImportExportService importExportService)
         {
             _context = context;
             _fileUploadService = fileUploadService;
+            _importExportService = importExportService;
         }
 
         // GET: Home/Index - Display all contacts with search functionality
@@ -220,5 +222,142 @@ namespace ContactManagementAPI.Controllers
         {
             return _context.Contacts.Any(e => e.Id == id);
         }
+
+        #region Import/Export Actions
+
+        // GET: Home/Import - Display import page
+        [RequireRight(RightsCatalog.ContactsCreate)]
+        public IActionResult Import()
+        {
+            return View();
+        }
+
+        // POST: Home/ImportFile - Handle file import
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.ContactsCreate)]
+        public async Task<IActionResult> ImportFile(IFormFile file, string fileType)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please select a file to import.";
+                return RedirectToAction(nameof(Import));
+            }
+
+            List<Contact> contacts;
+            List<string> errors;
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+
+                if (fileType == "excel")
+                {
+                    (contacts, errors) = await _importExportService.ImportFromExcel(stream);
+                }
+                else if (fileType == "csv")
+                {
+                    (contacts, errors) = await _importExportService.ImportFromCsv(stream);
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Invalid file type selected.";
+                    return RedirectToAction(nameof(Import));
+                }
+
+                if (errors.Any())
+                {
+                    TempData["ErrorMessage"] = $"Import completed with errors:<br/>{string.Join("<br/>", errors)}";
+                }
+
+                if (contacts.Any())
+                {
+                    // Set change tracking to true for saving
+                    _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+                    
+                    await _context.Contacts.AddRangeAsync(contacts);
+                    await _context.SaveChangesAsync();
+                    
+                    // Reset tracking behavior
+                    _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                    TempData["SuccessMessage"] = $"Successfully imported {contacts.Count} contact(s)!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No valid contacts found in the file.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error importing file: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Home/ExportExcel - Export to Excel
+        [RequireRight(RightsCatalog.ContactsView)]
+        public async Task<IActionResult> ExportExcel()
+        {
+            var contacts = await _context.Contacts
+                .Include(c => c.Group)
+                .OrderBy(c => c.FirstName)
+                .ToListAsync();
+
+            var fileBytes = await _importExportService.ExportToExcel(contacts);
+            var fileName = $"Contacts_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        // GET: Home/ExportCsv - Export to CSV
+        [RequireRight(RightsCatalog.ContactsView)]
+        public async Task<IActionResult> ExportCsv()
+        {
+            var contacts = await _context.Contacts
+                .Include(c => c.Group)
+                .OrderBy(c => c.FirstName)
+                .ToListAsync();
+
+            var fileBytes = await _importExportService.ExportToCsv(contacts);
+            var fileName = $"Contacts_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            
+            return File(fileBytes, "text/csv", fileName);
+        }
+
+        // GET: Home/ExportPdf - Export to PDF
+        [RequireRight(RightsCatalog.ContactsView)]
+        public async Task<IActionResult> ExportPdf()
+        {
+            var contacts = await _context.Contacts
+                .Include(c => c.Group)
+                .OrderBy(c => c.FirstName)
+                .ToListAsync();
+
+            var fileBytes = await _importExportService.ExportToPdf(contacts);
+            var fileName = $"Contacts_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            
+            return File(fileBytes, "application/pdf", fileName);
+        }
+
+        // GET: Home/DownloadTemplate - Download import template
+        public async Task<IActionResult> DownloadTemplate(string type)
+        {
+            if (type == "excel")
+            {
+                var fileBytes = await _importExportService.GenerateExcelTemplate();
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Contact_Import_Template.xlsx");
+            }
+            else if (type == "csv")
+            {
+                var fileBytes = await _importExportService.GenerateCsvTemplate();
+                return File(fileBytes, "text/csv", "Contact_Import_Template.csv");
+            }
+
+            return NotFound();
+        }
+
+        #endregion
     }
 }

@@ -49,6 +49,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<UserContextService>();
+builder.Services.AddScoped<ImportExportService>();
 
 // Configure CORS if needed for future API consumption
 builder.Services.AddCors(options =>

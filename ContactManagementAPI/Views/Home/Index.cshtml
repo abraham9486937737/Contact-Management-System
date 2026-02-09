@@ -15,12 +15,30 @@
     
     <div class="contacts-header">
         <h2>All Contacts</h2>
-        @if (UserContext.HasRight(RightsCatalog.ContactsCreate))
-        {
-            <a href="/home/create" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add New Contact
-            </a>
-        }
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            @if (UserContext.HasRight(RightsCatalog.ContactsCreate))
+            {
+                <a href="/home/create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Contact
+                </a>
+                <a href="/home/import" class="btn btn-success">
+                    <i class="fas fa-file-import"></i> Import
+                </a>
+            }
+            @if (UserContext.HasRight(RightsCatalog.ContactsView))
+            {
+                <div class="btn-group">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/home/exportexcel"><i class="fas fa-file-excel text-success"></i> Export to Excel</a></li>
+                        <li><a class="dropdown-item" href="/home/exportcsv"><i class="fas fa-file-csv text-info"></i> Export to CSV</a></li>
+                        <li><a class="dropdown-item" href="/home/exportpdf"><i class="fas fa-file-pdf text-danger"></i> Export to PDF</a></li>
+                    </ul>
+                </div>
+            }
+        </div>
     </div>
 
     <div class="search-container" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
