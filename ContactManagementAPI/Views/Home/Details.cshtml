@@ -4,6 +4,13 @@
 }
 
 <div class="details-container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+    
     <div class="details-header">
         <a href="/home/index" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Contacts
@@ -32,27 +39,36 @@
                         <i class="fas fa-user"></i>
                     </div>
                 }
+                <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center;">
+                    <strong style="color: #1976d2;">@Model.Photos.Count</strong> Photo@(Model.Photos.Count != 1 ? "s" : "") in Album
+                </div>
                 <a href="/photo/gallery/@Model.Id" class="btn btn-primary btn-block">
-                    <i class="fas fa-images"></i> Photo Gallery
+                    <i class="fas fa-images"></i> Photo Gallery (@Model.Photos.Count)
                 </a>
             </div>
 
             <div class="documents-section">
-                <h4><i class="fas fa-paperclip"></i> Documents</h4>
+                <h4><i class="fas fa-paperclip"></i> Documents (@Model.Documents.Count)</h4>
                 @if (Model.Documents.Count == 0)
                 {
-                    <p>No documents attached</p>
+                    <p style="color: #666; font-style: italic; padding: 10px 0;">No documents attached</p>
                 }
                 else
                 {
                     <ul class="doc-list">
-                        @foreach (var doc in Model.Documents)
+                        @foreach (var doc in Model.Documents.Take(5))
                         {
                             <li>
                                 <i class="fas fa-file"></i> @doc.FileName
-                                <a href="/document/download/@doc.Id/@Model.Id" class="btn btn-sm btn-info">
+                                <a href="/document/download/@doc.Id/@Model.Id" class="btn btn-sm btn-info" title="Download">
                                     <i class="fas fa-download"></i>
                                 </a>
+                            </li>
+                        }
+                        @if (Model.Documents.Count > 5)
+                        {
+                            <li style="color: #666; font-style: italic; padding: 5px 0;">
+                                ... and @(Model.Documents.Count - 5) more
                             </li>
                         }
                     </ul>

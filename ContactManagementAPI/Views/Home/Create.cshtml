@@ -8,8 +8,20 @@
         <h2><i class="fas fa-plus-circle"></i> Create New Contact</h2>
     </div>
 
-    <form asp-action="Create" method="post" class="contact-form">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="contact-form">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="form-section">
+            <h4>Profile Photo</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="profilePhoto">Upload Profile Photo</label>
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" class="form-control" />
+                    <small class="form-text text-muted">Accepted formats: JPG, PNG, GIF, BMP (Max 5MB)</small>
+                </div>
+            </div>
+        </div>
 
         <div class="form-section">
             <h4>Basic Information</h4>
@@ -126,6 +138,12 @@
             </a>
         </div>
     </form>
+    
+    <div class="info-box" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+        <h4 style="color: #1976d2; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Note</h4>
+        <p style="margin: 5px 0;"><strong>Photo Albums:</strong> After creating the contact, you can add multiple photos to their album from the contact details page.</p>
+        <p style="margin: 5px 0;"><strong>Documents:</strong> You can attach documents (PDF, Word, Excel, etc.) from the contact details page after creation.</p>
+    </div>
 </div>
 
 @section Scripts {

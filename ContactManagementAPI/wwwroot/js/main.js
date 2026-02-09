@@ -12,6 +12,20 @@ function initializeEventListeners() {
         form.addEventListener('submit', function(e) {
             if (!validateForm(this)) {
                 e.preventDefault();
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                const originalHTML = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                submitBtn.disabled = true;
+
+                // Restore button if submission is blocked by navigation issues
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalHTML;
+                    submitBtn.disabled = false;
+                }, 5000);
             }
         });
     });
@@ -120,17 +134,3 @@ setTimeout(function() {
     }
 }, sessionTimeout - 5 * 60 * 1000);
 
-// Add loading spinner to buttons
-document.addEventListener('click', function(e) {
-    if (e.target.type === 'submit' && e.target.classList.contains('btn')) {
-        const originalHTML = e.target.innerHTML;
-        e.target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        e.target.disabled = true;
-
-        // Re-enable button after 3 seconds (adjust as needed)
-        setTimeout(() => {
-            e.target.innerHTML = originalHTML;
-            e.target.disabled = false;
-        }, 3000);
-    }
-});

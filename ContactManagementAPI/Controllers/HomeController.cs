@@ -2,16 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
+using ContactManagementAPI.Services;
 
 namespace ContactManagementAPI.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly FileUploadService _fileUploadService;
 
-        public HomeController(ApplicationDbContext context)
+        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService)
         {
             _context = context;
+            _fileUploadService = fileUploadService;
         }
 
         // GET: Home/Index - Display all contacts
@@ -25,11 +28,11 @@ namespace ContactManagementAPI.Controllers
             {
                 contacts = contacts.Where(c =>
                     c.FirstName.Contains(searchTerm) ||
-                    c.LastName.Contains(searchTerm) ||
-                    c.Email.Contains(searchTerm) ||
-                    c.Mobile1.Contains(searchTerm) ||
-                    c.Mobile2.Contains(searchTerm) ||
-                    c.Mobile3.Contains(searchTerm));
+                    (c.LastName != null && c.LastName.Contains(searchTerm)) ||
+                    (c.Email != null && c.Email.Contains(searchTerm)) ||
+                    (c.Mobile1 != null && c.Mobile1.Contains(searchTerm)) ||
+                    (c.Mobile2 != null && c.Mobile2.Contains(searchTerm)) ||
+                    (c.Mobile3 != null && c.Mobile3.Contains(searchTerm)));
             }
 
             return View(await contacts.OrderByDescending(c => c.UpdatedAt).ToListAsync());
@@ -63,15 +66,31 @@ namespace ContactManagementAPI.Controllers
         // POST: Home/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact)
+        public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact, IFormFile? profilePhoto)
         {
             if (ModelState.IsValid)
             {
                 contact.CreatedAt = DateTime.Now;
                 contact.UpdatedAt = DateTime.Now;
+                
+                // Save contact first to get the ID
                 _context.Add(contact);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                
+                // Handle profile photo upload after we have the contact ID
+                if (profilePhoto != null)
+                {
+                    var result = await _fileUploadService.UploadPhotoAsync(profilePhoto, contact.Id);
+                    if (result.Success)
+                    {
+                        contact.PhotoPath = result.FilePath;
+                        _context.Update(contact);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                
+                TempData["SuccessMessage"] = "Contact created successfully!";
+                return RedirectToAction(nameof(Details), new { id = contact.Id });
             }
             ViewData["Groups"] = _context.ContactGroups.ToList();
             return View(contact);
@@ -94,7 +113,7 @@ namespace ContactManagementAPI.Controllers
         // POST: Home/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact)
+        public async Task<IActionResult> Edit(int id, Contact contact, IFormFile? profilePhoto)
         {
             if (id != contact.Id)
                 return NotFound();
@@ -103,9 +122,47 @@ namespace ContactManagementAPI.Controllers
             {
                 try
                 {
-                    contact.UpdatedAt = DateTime.Now;
-                    _context.Update(contact);
+                    // Retrieve existing contact to preserve navigation properties
+                    var existingContact = await _context.Contacts.FindAsync(id);
+                    if (existingContact == null)
+                        return NotFound();
+
+                    // Update properties
+                    existingContact.FirstName = contact.FirstName;
+                    existingContact.LastName = contact.LastName;
+                    existingContact.NickName = contact.NickName;
+                    existingContact.Email = contact.Email;
+                    existingContact.Mobile1 = contact.Mobile1;
+                    existingContact.Mobile2 = contact.Mobile2;
+                    existingContact.Mobile3 = contact.Mobile3;
+                    existingContact.WhatsAppNumber = contact.WhatsAppNumber;
+                    existingContact.Address = contact.Address;
+                    existingContact.City = contact.City;
+                    existingContact.State = contact.State;
+                    existingContact.PostalCode = contact.PostalCode;
+                    existingContact.Country = contact.Country;
+                    existingContact.GroupId = contact.GroupId;
+                    existingContact.OtherDetails = contact.OtherDetails;
+                    existingContact.UpdatedAt = DateTime.Now;
+
+                    // Handle profile photo upload
+                    if (profilePhoto != null)
+                    {
+                        var result = await _fileUploadService.UploadPhotoAsync(profilePhoto, existingContact.Id);
+                        if (result.Success)
+                        {
+                            // Delete old photo if exists
+                            if (!string.IsNullOrEmpty(existingContact.PhotoPath))
+                            {
+                                _fileUploadService.DeleteFile(existingContact.PhotoPath);
+                            }
+                            existingContact.PhotoPath = result.FilePath;
+                        }
+                    }
+                    
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Contact updated successfully!";
+                    return RedirectToAction(nameof(Details), new { id = existingContact.Id });
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -113,7 +170,6 @@ namespace ContactManagementAPI.Controllers
                         return NotFound();
                     throw;
                 }
-                return RedirectToAction(nameof(Index));
             }
             ViewData["Groups"] = _context.ContactGroups.ToList();
             return View(contact);
@@ -145,6 +201,7 @@ namespace ContactManagementAPI.Controllers
             {
                 _context.Contacts.Remove(contact);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Contact deleted successfully!";
             }
             return RedirectToAction(nameof(Index));
         }

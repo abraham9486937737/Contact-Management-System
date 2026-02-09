@@ -4,14 +4,39 @@
 }
 
 <div class="form-container">
-    <div class="form-header">
+    <div class="form-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h2><i class="fas fa-edit"></i> Edit Contact</h2>
+        <a href="/" class="btn btn-secondary" style="background: #6c757d;">
+            <i class="fas fa-arrow-left"></i> Back to Contacts
+        </a>
     </div>
 
-    <form asp-action="Edit" method="post" class="contact-form">
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" class="contact-form">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="PhotoPath" />
+        <input type="hidden" asp-for="CreatedAt" />
+        <input type="hidden" asp-for="UpdatedAt" />
+
+        <div class="form-section">
+            <h4>Profile Photo</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                    {
+                        <div style="margin-bottom: 15px;">
+                            <p><strong>Current Photo:</strong></p>
+                            <img src="@Model.PhotoPath" alt="Current photo" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;" />
+                        </div>
+                    }
+                    <label for="profilePhoto">Upload New Profile Photo (optional)</label>
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" class="form-control" />
+                    <small class="form-text text-muted">Leave empty to keep current photo. Accepted formats: JPG, PNG, GIF, BMP (Max 5MB)</small>
+                </div>
+            </div>
+        </div>
 
         <div class="form-section">
             <h4>Basic Information</h4>
@@ -128,6 +153,12 @@
             </a>
         </div>
     </form>
+    
+    <div class="info-box" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+        <h4 style="color: #1976d2; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Additional Features</h4>
+        <p style="margin: 5px 0;"><strong>Photo Albums:</strong> Manage multiple photos in the <a href="/photo/gallery/@Model.Id">Photo Gallery</a></p>
+        <p style="margin: 5px 0;"><strong>Documents:</strong> Attach and manage documents in <a href="/document/list/@Model.Id">Document Manager</a></p>
+    </div>
 </div>
 
 @section Scripts {

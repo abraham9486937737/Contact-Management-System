@@ -31,6 +31,7 @@
     </div>
 
     <form asp-action="DeleteConfirmed" method="post" class="delete-form">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <div class="form-actions">
             <button type="submit" class="btn btn-danger">
