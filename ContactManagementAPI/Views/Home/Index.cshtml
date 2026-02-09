@@ -1,6 +1,8 @@
+@inject ContactManagementAPI.Services.UserContextService UserContext
 @model IEnumerable<ContactManagementAPI.Models.Contact>
 @{
     ViewData["Title"] = "All Contacts";
+    var searchTerm = ViewBag.SearchTerm ?? "";
 }
 
 <div class="contacts-container">
@@ -13,25 +15,51 @@
     
     <div class="contacts-header">
         <h2>All Contacts</h2>
-        <a href="/home/create" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add New Contact
-        </a>
+        @if (UserContext.HasRight(RightsCatalog.ContactsCreate))
+        {
+            <a href="/home/create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Contact
+            </a>
+        }
     </div>
 
-    <div class="search-container">
+    <div class="search-container" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <form method="get" action="/home/index" class="search-form">
-            <input type="text" name="searchTerm" placeholder="Search by name, email, or phone..." class="search-input">
-            <button type="submit" class="btn btn-secondary">
-                <i class="fas fa-search"></i> Search
-            </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="flex: 1;">
+                    <input type="text" name="searchTerm" placeholder="Search by name, email, or phone..." 
+                           class="search-input" value="@searchTerm" 
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                </div>
+                <button type="submit" class="btn btn-info" style="white-space: nowrap;">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <a href="/home/index" class="btn btn-secondary" style="white-space: nowrap;">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                }
+            </div>
         </form>
+        @if (!string.IsNullOrEmpty(searchTerm))
+        {
+            <p style="margin-top: 10px; color: #666; font-size: 13px;">
+                <i class="fas fa-filter"></i> Showing results for "<strong>@searchTerm</strong>"
+            </p>
+        }
     </div>
 
     @if (Model.Count() == 0)
     {
         <div class="no-contacts">
             <i class="fas fa-inbox"></i>
-            <p>No contacts found. <a href="/home/create">Create your first contact</a></p>
+            <p>No contacts found.
+                @if (UserContext.HasRight(RightsCatalog.ContactsCreate))
+                {
+                    <a href="/home/create">Create your first contact</a>
+                }
+            </p>
         </div>
     }
     else
@@ -81,12 +109,18 @@
                         <a href="/home/details/@contact.Id" class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> View
                         </a>
-                        <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i> Delete
-                        </a>
+                        @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
+                        {
+                            <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        }
+                        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                        {
+                            <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        }
                     </div>
                 </div>
             }

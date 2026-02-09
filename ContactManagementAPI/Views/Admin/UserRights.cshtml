@@ -1,0 +1,67 @@
+@model ContactManagementAPI.ViewModels.UserRightsViewModel
+@{
+    ViewData["Title"] = "User Rights";
+}
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fas fa-key"></i> Rights for @Model.UserName</h2>
+        <a href="/admin/users" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <form method="post" asp-action="UserRights">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="UserId" />
+
+        <div class="info-box">
+            <p><strong>Group:</strong> @Model.GroupName</p>
+            <p><strong>Legend:</strong> Inherit uses group rights. Grant/Deny override group rights for this user.</p>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Right</th>
+                        <th style="width: 180px;">Selection</th>
+                        <th>Effective</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Rights.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model.Rights[i].Category</td>
+                            <td>
+                                @Model.Rights[i].Label
+                                <input type="hidden" asp-for="Rights[@i].Key" />
+                                <input type="hidden" asp-for="Rights[@i].Category" />
+                                <input type="hidden" asp-for="Rights[@i].Label" />
+                            </td>
+                            <td>
+                                <select asp-for="Rights[@i].Selection" class="form-control">
+                                    <option value="Inherit">Inherit</option>
+                                    <option value="Grant">Grant</option>
+                                    <option value="Deny">Deny</option>
+                                </select>
+                            </td>
+                            <td>@(Model.Rights[i].EffectiveGranted ? "Allowed" : "Denied")</td>
+                            <td>@Model.Rights[i].EffectiveSource</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Rights</button>
+        </div>
+    </form>
+</div>

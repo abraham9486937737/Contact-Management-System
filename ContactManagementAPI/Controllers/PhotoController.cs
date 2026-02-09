@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Services;
+using ContactManagementAPI.Security;
 
 namespace ContactManagementAPI.Controllers
 {
@@ -18,6 +19,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Photo/Gallery/5
+        [RequireRight(RightsCatalog.PhotosManage)]
         public async Task<IActionResult> Gallery(int? id)
         {
             if (id == null)
@@ -35,6 +37,7 @@ namespace ContactManagementAPI.Controllers
 
         // POST: Photo/Upload
         [HttpPost]
+        [RequireRight(RightsCatalog.PhotosManage)]
         public async Task<IActionResult> Upload(int contactId, IFormFile photoFile)
         {
             var contact = await _context.Contacts.FindAsync(contactId);
@@ -64,6 +67,7 @@ namespace ContactManagementAPI.Controllers
 
         // POST: Photo/SetProfilePhoto
         [HttpPost]
+        [RequireRight(RightsCatalog.PhotosManage)]
         public async Task<IActionResult> SetProfilePhoto(int contactId, int photoId)
         {
             var contact = await _context.Contacts
@@ -93,6 +97,7 @@ namespace ContactManagementAPI.Controllers
 
         // POST: Photo/Delete
         [HttpPost]
+        [RequireRight(RightsCatalog.PhotosManage)]
         public async Task<IActionResult> Delete(int id, int contactId)
         {
             var photo = await _context.ContactPhotos.FirstOrDefaultAsync(p => p.Id == id && p.ContactId == contactId);

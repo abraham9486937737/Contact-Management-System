@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Services;
+using ContactManagementAPI.Security;
 
 namespace ContactManagementAPI.Controllers
 {
@@ -18,6 +19,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Document/List/5
+        [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> List(int? id)
         {
             if (id == null)
@@ -35,6 +37,7 @@ namespace ContactManagementAPI.Controllers
 
         // POST: Document/Upload
         [HttpPost]
+        [RequireRight(RightsCatalog.DocumentsManage)]
         public async Task<IActionResult> Upload(int contactId, IFormFile documentFile, string documentType = "Other")
         {
             var contact = await _context.Contacts.FindAsync(contactId);
@@ -64,6 +67,7 @@ namespace ContactManagementAPI.Controllers
 
         // POST: Document/Delete
         [HttpPost]
+        [RequireRight(RightsCatalog.DocumentsManage)]
         public async Task<IActionResult> Delete(int id, int contactId)
         {
             var document = await _context.ContactDocuments.FirstOrDefaultAsync(d => d.Id == id && d.ContactId == contactId);
@@ -78,6 +82,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Document/Download
+        [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> Download(int id, int contactId)
         {
             var document = await _context.ContactDocuments.FirstOrDefaultAsync(d => d.Id == id && d.ContactId == contactId);

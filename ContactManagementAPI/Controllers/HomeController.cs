@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Services;
+using ContactManagementAPI.Security;
 
 namespace ContactManagementAPI.Controllers
 {
@@ -17,7 +18,8 @@ namespace ContactManagementAPI.Controllers
             _fileUploadService = fileUploadService;
         }
 
-        // GET: Home/Index - Display all contacts
+        // GET: Home/Index - Display all contacts with search functionality
+        [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> Index(string searchTerm = "")
         {
             var contacts = _context.Contacts
@@ -35,10 +37,12 @@ namespace ContactManagementAPI.Controllers
                     (c.Mobile3 != null && c.Mobile3.Contains(searchTerm)));
             }
 
+            ViewBag.SearchTerm = searchTerm;
             return View(await contacts.OrderByDescending(c => c.UpdatedAt).ToListAsync());
         }
 
         // GET: Home/Details/5
+        [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -57,6 +61,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Home/Create
+        [RequireRight(RightsCatalog.ContactsCreate)]
         public IActionResult Create()
         {
             ViewData["Groups"] = _context.ContactGroups.ToList();
@@ -66,6 +71,7 @@ namespace ContactManagementAPI.Controllers
         // POST: Home/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.ContactsCreate)]
         public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact, IFormFile? profilePhoto)
         {
             if (ModelState.IsValid)
@@ -97,6 +103,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Home/Edit/5
+        [RequireRight(RightsCatalog.ContactsEdit)]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -113,6 +120,7 @@ namespace ContactManagementAPI.Controllers
         // POST: Home/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.ContactsEdit)]
         public async Task<IActionResult> Edit(int id, Contact contact, IFormFile? profilePhoto)
         {
             if (id != contact.Id)
@@ -176,6 +184,7 @@ namespace ContactManagementAPI.Controllers
         }
 
         // GET: Home/Delete/5
+        [RequireRight(RightsCatalog.ContactsDelete)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -194,6 +203,7 @@ namespace ContactManagementAPI.Controllers
         // POST: Home/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.ContactsDelete)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var contact = await _context.Contacts.FindAsync(id);

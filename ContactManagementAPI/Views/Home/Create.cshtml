@@ -28,19 +28,19 @@
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="FirstName">First Name *</label>
-                    <input asp-for="FirstName" class="form-control" required />
+                    <input asp-for="FirstName" class="form-control" required autocomplete="given-name" />
                     <span asp-validation-for="FirstName" class="text-danger"></span>
                 </div>
                 <div class="form-group">
                     <label asp-for="LastName">Last Name</label>
-                    <input asp-for="LastName" class="form-control" />
+                    <input asp-for="LastName" class="form-control" autocomplete="family-name" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="NickName">Nick Name</label>
-                    <input asp-for="NickName" class="form-control" />
+                    <input asp-for="NickName" class="form-control" autocomplete="nickname" />
                 </div>
                 <div class="form-group">
                     <label asp-for="GroupId">Contact Group</label>
@@ -60,29 +60,29 @@
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="Email">Email Address</label>
-                    <input asp-for="Email" type="email" class="form-control" />
+                    <input asp-for="Email" type="email" class="form-control" inputmode="email" autocomplete="email" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="Mobile1">Mobile 1</label>
-                    <input asp-for="Mobile1" class="form-control" />
+                    <input asp-for="Mobile1" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
                 </div>
                 <div class="form-group">
                     <label asp-for="Mobile2">Mobile 2</label>
-                    <input asp-for="Mobile2" class="form-control" />
+                    <input asp-for="Mobile2" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="Mobile3">Mobile 3</label>
-                    <input asp-for="Mobile3" class="form-control" />
+                    <input asp-for="Mobile3" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
                 </div>
                 <div class="form-group">
                     <label asp-for="WhatsAppNumber">WhatsApp Number</label>
-                    <input asp-for="WhatsAppNumber" class="form-control" />
+                    <input asp-for="WhatsAppNumber" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
                 </div>
             </div>
         </div>
@@ -92,29 +92,29 @@
             <div class="form-row">
                 <div class="form-group full-width">
                     <label asp-for="Address">Street Address</label>
-                    <input asp-for="Address" class="form-control" />
+                    <input asp-for="Address" class="form-control" autocomplete="street-address" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="City">City</label>
-                    <input asp-for="City" class="form-control" />
+                    <input asp-for="City" class="form-control" autocomplete="address-level2" />
                 </div>
                 <div class="form-group">
                     <label asp-for="State">State</label>
-                    <input asp-for="State" class="form-control" />
+                    <input asp-for="State" class="form-control" autocomplete="address-level1" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="PostalCode">Postal Code</label>
-                    <input asp-for="PostalCode" class="form-control" />
+                    <input asp-for="PostalCode" class="form-control" inputmode="numeric" autocomplete="postal-code" />
                 </div>
                 <div class="form-group">
                     <label asp-for="Country">Country</label>
-                    <input asp-for="Country" class="form-control" />
+                    <input asp-for="Country" class="form-control" autocomplete="country-name" />
                 </div>
             </div>
         </div>

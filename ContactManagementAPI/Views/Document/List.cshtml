@@ -1,3 +1,4 @@
+@inject ContactManagementAPI.Services.UserContextService UserContext
 @model ContactManagementAPI.Models.Contact
 @{
     ViewData["Title"] = $"Documents - {Model.FirstName} {Model.LastName}";
@@ -11,37 +12,40 @@
         <h2><i class="fas fa-file-archive"></i> Documents - @Model.FirstName @Model.LastName</h2>
     </div>
 
-    <div class="document-upload">
-        <div class="upload-form">
-            <h4>Upload Document</h4>
-            <form id="uploadForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="documentType">Document Type:</label>
-                        <select id="documentType" class="form-control">
-                            <option value="Other">Other</option>
-                            <option value="ID">ID / Passport</option>
-                            <option value="Address">Address Proof</option>
-                            <option value="Contract">Contract</option>
-                            <option value="Invoice">Invoice</option>
-                            <option value="Certificate">Certificate</option>
-                            <option value="Medical">Medical Records</option>
-                            <option value="Financial">Financial</option>
-                        </select>
+    @if (UserContext.HasRight(RightsCatalog.DocumentsManage))
+    {
+        <div class="document-upload">
+            <div class="upload-form">
+                <h4>Upload Document</h4>
+                <form id="uploadForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="documentType">Document Type:</label>
+                            <select id="documentType" class="form-control">
+                                <option value="Other">Other</option>
+                                <option value="ID">ID / Passport</option>
+                                <option value="Address">Address Proof</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Invoice">Invoice</option>
+                                <option value="Certificate">Certificate</option>
+                                <option value="Medical">Medical Records</option>
+                                <option value="Financial">Financial</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="documentFile">Select File:</label>
+                            <input type="file" id="documentFile" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx" />
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-primary" onclick="uploadDocument()">
+                                <i class="fas fa-upload"></i> Upload
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="documentFile">Select File:</label>
-                        <input type="file" id="documentFile" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx" />
-                    </div>
-                    <div class="form-group">
-                        <button type="button" class="btn btn-primary" onclick="uploadDocument()">
-                            <i class="fas fa-upload"></i> Upload
-                        </button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+    }
 
     @if (Model.Documents.Count == 0)
     {
@@ -77,9 +81,12 @@
                                 <a href="/document/download/@doc.Id/@Model.Id" class="btn btn-sm btn-info">
                                     <i class="fas fa-download"></i> Download
                                 </a>
-                                <button type="button" class="btn btn-sm btn-danger delete-doc-btn" data-doc-id="@doc.Id">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
+                                @if (UserContext.HasRight(RightsCatalog.DocumentsManage))
+                                {
+                                    <button type="button" class="btn btn-sm btn-danger delete-doc-btn" data-doc-id="@doc.Id">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }

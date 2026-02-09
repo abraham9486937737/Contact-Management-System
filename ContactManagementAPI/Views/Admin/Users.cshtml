@@ -1,0 +1,47 @@
+@model IEnumerable<ContactManagementAPI.Models.AppUser>
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fas fa-users"></i> Users</h2>
+        <a href="/admin/createuser" class="btn btn-primary"><i class="fas fa-user-plus"></i> New User</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Full Name</th>
+                    <th>Group</th>
+                    <th>Admin</th>
+                    <th>Status</th>
+                    <th style="width: 220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.UserName</td>
+                        <td>@user.FullName</td>
+                        <td>@(user.Group?.Name ?? "-")</td>
+                        <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                        <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                        <td>
+                            <a href="/admin/edituser/@user.Id" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                            <a href="/admin/userrights/@user.Id" class="btn btn-sm btn-info"><i class="fas fa-key"></i> Rights</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

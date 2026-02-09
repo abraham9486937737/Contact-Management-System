@@ -1,3 +1,4 @@
+@inject ContactManagementAPI.Services.UserContextService UserContext
 @model ContactManagementAPI.Models.Contact
 @{
     ViewData["Title"] = $"Photo Gallery - {Model.FirstName} {Model.LastName}";
@@ -11,16 +12,19 @@
         <h2><i class="fas fa-images"></i> Photo Gallery - @Model.FirstName @Model.LastName</h2>
     </div>
 
-    <div class="gallery-upload">
-        <div class="upload-area" id="uploadArea">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <p>Drag and drop photos here or click to select</p>
-            <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" />
-            <button type="button" class="btn btn-primary" onclick="document.getElementById('photoInput').click()">
-                <i class="fas fa-plus"></i> Select Photos
-            </button>
+    @if (UserContext.HasRight(RightsCatalog.PhotosManage))
+    {
+        <div class="gallery-upload">
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drag and drop photos here or click to select</p>
+                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" />
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-plus"></i> Select Photos
+                </button>
+            </div>
         </div>
-    </div>
+    }
 
     @if (Model.Photos.Count == 0)
     {
@@ -43,15 +47,18 @@
                         }
                     </div>
                     <div class="photo-actions">
-                        @if (!photo.IsProfilePhoto)
+                        @if (UserContext.HasRight(RightsCatalog.PhotosManage))
                         {
-                            <button type="button" class="btn btn-sm btn-info set-profile-btn" data-photo-id="@photo.Id">
-                                <i class="fas fa-star"></i> Set as Profile
+                            if (!photo.IsProfilePhoto)
+                            {
+                                <button type="button" class="btn btn-sm btn-info set-profile-btn" data-photo-id="@photo.Id">
+                                    <i class="fas fa-star"></i> Set as Profile
+                                </button>
+                            }
+                            <button type="button" class="btn btn-sm btn-danger delete-photo-btn" data-photo-id="@photo.Id">
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         }
-                        <button type="button" class="btn btn-sm btn-danger delete-photo-btn" data-photo-id="@photo.Id">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
                     </div>
                     <p class="photo-info"><small>@photo.FileName</small></p>
                 </div>
@@ -67,24 +74,26 @@
     const uploadArea = document.getElementById('uploadArea');
     const photoInput = document.getElementById('photoInput');
 
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
+    if (uploadArea && photoInput) {
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
 
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
 
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
 
-    photoInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
+        photoInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+    }
 
     function handleFiles(files) {
         for (let file of files) {

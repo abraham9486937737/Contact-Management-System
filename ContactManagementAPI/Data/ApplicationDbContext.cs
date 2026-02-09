@@ -14,6 +14,10 @@ namespace ContactManagementAPI.Data
         public DbSet<ContactGroup> ContactGroups { get; set; }
         public DbSet<ContactPhoto> ContactPhotos { get; set; }
         public DbSet<ContactDocument> ContactDocuments { get; set; }
+        public DbSet<AppUser> AppUsers { get; set; }
+        public DbSet<UserGroup> UserGroups { get; set; }
+        public DbSet<GroupRight> GroupRights { get; set; }
+        public DbSet<UserRight> UserRights { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,6 +43,43 @@ namespace ContactManagementAPI.Data
                 .WithMany(c => c.Documents)
                 .HasForeignKey(cd => cd.ContactId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // AppUser - UserGroup relationship
+            modelBuilder.Entity<AppUser>()
+                .HasOne(u => u.Group)
+                .WithMany(g => g.Users)
+                .HasForeignKey(u => u.GroupId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // GroupRight - UserGroup relationship
+            modelBuilder.Entity<GroupRight>()
+                .HasOne(gr => gr.UserGroup)
+                .WithMany(g => g.GroupRights)
+                .HasForeignKey(gr => gr.UserGroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserRight - AppUser relationship
+            modelBuilder.Entity<UserRight>()
+                .HasOne(ur => ur.AppUser)
+                .WithMany(u => u.UserRights)
+                .HasForeignKey(ur => ur.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.UserName)
+                .IsUnique();
+
+            modelBuilder.Entity<UserGroup>()
+                .HasIndex(g => g.Name)
+                .IsUnique();
+
+            modelBuilder.Entity<GroupRight>()
+                .HasIndex(gr => new { gr.UserGroupId, gr.RightKey })
+                .IsUnique();
+
+            modelBuilder.Entity<UserRight>()
+                .HasIndex(ur => new { ur.AppUserId, ur.RightKey })
+                .IsUnique();
 
             // Seed default contact groups
             modelBuilder.Entity<ContactGroup>().HasData(

@@ -1,0 +1,65 @@
+@model ContactManagementAPI.ViewModels.UserCreateViewModel
+@{
+    ViewData["Title"] = "Create User";
+    var groups = ViewData["Groups"] as IEnumerable<ContactManagementAPI.Models.UserGroup>;
+}
+
+<div class="form-container">
+    <h2><i class="fas fa-user-plus"></i> Create User</h2>
+
+    <form method="post" asp-action="CreateUser">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label asp-for="UserName"></label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password"></label>
+            <input asp-for="Password" class="form-control" type="password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="FullName"></label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Group <span style="color:red;">*</span></label>
+            <select asp-for="GroupId" class="form-control">
+                <option value="">-- Select Group --</option>
+                @if (groups != null)
+                {
+                    foreach (var group in groups)
+                    {
+                        <option value="@group.Id">@group.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-row" style="display:flex; gap:20px;">
+            <div class="form-check">
+                <input asp-for="IsAdmin" class="form-check-input" type="checkbox" />
+                <label asp-for="IsAdmin" class="form-check-label">Admin</label>
+            </div>
+            <div class="form-check">
+                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                <label asp-for="IsActive" class="form-check-label">Active</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a href="/admin/users" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
