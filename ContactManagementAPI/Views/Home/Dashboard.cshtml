@@ -4,135 +4,330 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2><i class="fas fa-chart-line"></i> Contact Dashboard</h2>
-            <p class="text-muted">Last updated: @Model.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")</p>
+<div class="container mt-2 dashboard-compact">
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <h2 class="mb-0 h4"><i class="fas fa-chart-line"></i> Contact Dashboard</h2>
+            <p class="text-muted mb-0 small">Last updated: @Model.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")</p>
         </div>
-    </div>
-
-    <!-- Key Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-users text-primary"></i> Total Contacts</h5>
-                    <h3 class="text-primary">@Model.TotalContacts</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-envelope text-success"></i> With Email</h5>
-                    <h3 class="text-success">@Model.ContactsWithEmail</h3>
-                    <small class="text-muted">@($"{(Model.TotalContacts > 0 ? (Model.ContactsWithEmail * 100 / Model.TotalContacts) : 0)}%")</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-phone text-warning"></i> With Phone</h5>
-                    <h3 class="text-warning">@Model.ContactsWithPhone</h3>
-                    <small class="text-muted">@($"{(Model.TotalContacts > 0 ? (Model.ContactsWithPhone * 100 / Model.TotalContacts) : 0)}%")</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts and Details -->
-    <div class="row">
-        <!-- Top Cities -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Top Cities</h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.TopCities.Any())
-                    {
-                        <div class="list-group">
-                            @foreach (var city in Model.TopCities)
-                            {
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">@city.City</h6>
-                                        <span class="badge bg-info">@city.Count</span>
-                                    </div>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-info" role="progressbar" 
-                                             style="width: @($"{(city.Count * 100 / (Model.TopCities.FirstOrDefault()?.Count ?? 1))}%")" 
-                                             aria-valuenow="@city.Count" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">No city data available</p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Contacts by Group -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-layer-group"></i> Contacts by Group</h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.ContactsByGroup.Any())
-                    {
-                        <div class="list-group">
-                            @foreach (var group in Model.ContactsByGroup)
-                            {
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">@group.GroupName</h6>
-                                        <span class="badge bg-success">@group.Count</span>
-                                    </div>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-success" role="progressbar" 
-                                             style="width: @($"{(group.Count * 100 / (Model.ContactsByGroup.FirstOrDefault()?.Count ?? 1))}%")" 
-                                             aria-valuenow="@group.Count" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">No group data available</p>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Additional Actions -->
-    <div class="row mt-4">
-        <div class="col-12">
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
             <div class="btn-group" role="group">
                 <a href="@Url.Action("Index")" class="btn btn-primary">
-                    <i class="fas fa-list"></i> View All Contacts
+                    <i class="fas fa-list"></i> View All
                 </a>
                 <a href="@Url.Action("FindDuplicates")" class="btn btn-warning">
-                    <i class="fas fa-copy"></i> Find Duplicates
+                    <i class="fas fa-copy"></i> Duplicates
                 </a>
                 <a href="@Url.Action("Import")" class="btn btn-success">
-                    <i class="fas fa-file-import"></i> Import Contacts
+                    <i class="fas fa-file-import"></i> Import
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="dashboard-kpis">
+        <div class="card stat-card border-0 kpi-card">
+            <div class="card-body">
+                <div class="icon-pill bg-primary-subtle text-primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="kpi-value text-primary">@Model.TotalContacts</div>
+                <div class="kpi-title">Total Contacts</div>
+                <div class="kpi-sub">All active contacts</div>
+            </div>
+        </div>
+        <div class="card stat-card border-0 kpi-card">
+            <div class="card-body">
+                <div class="icon-pill bg-info-subtle text-info">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="kpi-value text-info">@Model.TotalContacts</div>
+                <div class="kpi-title">Active Contacts</div>
+                <div class="kpi-sub">Currently enabled</div>
+            </div>
+        </div>
+        <div class="card stat-card border-0 kpi-card">
+            <div class="card-body">
+                <div class="icon-pill bg-success-subtle text-success">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="kpi-value text-success">@Model.ContactsWithEmail</div>
+                <div class="kpi-title">With Email</div>
+                <div class="kpi-sub">@($"{(Model.TotalContacts > 0 ? (Model.ContactsWithEmail * 100 / Model.TotalContacts) : 0)}%") of total</div>
+            </div>
+        </div>
+        <div class="card stat-card border-0 kpi-card">
+            <div class="card-body">
+                <div class="icon-pill bg-warning-subtle text-warning">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="kpi-value text-warning">@Model.ContactsWithPhone</div>
+                <div class="kpi-title">With Phone</div>
+                <div class="kpi-sub">@($"{(Model.TotalContacts > 0 ? (Model.ContactsWithPhone * 100 / Model.TotalContacts) : 0)}%") of total</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="dashboard-charts">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="fas fa-layer-group text-success"></i> Contacts by Group</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrap">
+                    <canvas id="groupsChart" class="chart-canvas"></canvas>
+                </div>
+                @if (!Model.ContactsByGroup.Any())
+                {
+                    <p class="text-muted small mt-2">No group data available</p>
+                }
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="fas fa-map-marker-alt text-info"></i> Top Cities</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrap">
+                    <canvas id="citiesChart" class="chart-canvas"></canvas>
+                </div>
+                @if (!Model.TopCities.Any())
+                {
+                    <p class="text-muted small mt-2">No city data available</p>
+                }
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+        .dashboard-compact {
+            position: relative;
+            font-family: 'Space Grotesk', sans-serif;
+            --ink: #1b1f2a;
+            --muted: #5f6b7a;
+            --accent: #0ea5a3;
+            --accent-2: #3b82f6;
+            --card-bg: #ffffff;
+            --panel-bg: #f7f9fc;
+            --ring: rgba(14, 165, 163, 0.12);
+        }
+
+        .dashboard-compact::before,
+        .dashboard-compact::after {
+            content: '';
+            position: absolute;
+            z-index: 0;
+            border-radius: 999px;
+            filter: blur(30px);
+            opacity: 0.6;
+        }
+
+        .dashboard-compact::before {
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, #a7f3d0 0%, transparent 60%);
+            top: -60px;
+            right: -40px;
+        }
+
+        .dashboard-compact::after {
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, #bfdbfe 0%, transparent 60%);
+            bottom: -80px;
+            left: -30px;
+        }
+
+        .dashboard-compact .card {
+            border-radius: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+            border: 1px solid #eef2f7;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
+            border-color: rgba(14, 165, 163, 0.3);
+        }
+
+        .kpi-card .card-body {
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            margin-top: 8px;
+            line-height: 1.1;
+            color: var(--ink);
+        }
+
+        .kpi-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .kpi-sub {
+            font-size: 0.75rem;
+            color: #7a8898;
+            margin-top: 4px;
+        }
+
+        .dashboard-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-kpis .stat-card:nth-child(1) { animation: rise 0.4s ease; }
+        .dashboard-kpis .stat-card:nth-child(2) { animation: rise 0.5s ease; }
+        .dashboard-kpis .stat-card:nth-child(3) { animation: rise 0.6s ease; }
+        .dashboard-kpis .stat-card:nth-child(4) { animation: rise 0.7s ease; }
+
+        .dashboard-charts {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .icon-pill {
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            box-shadow: 0 6px 16px var(--ring);
+        }
+
+        .chart-wrap {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 8px;
+            border: 1px solid #e6edf5;
+            height: 240px;
+        }
+
+        .chart-canvas {
+            height: 215px !important;
+            width: 100% !important;
+        }
+
+        .dashboard-compact .card-body {
+            padding: 0.6rem;
+        }
+
+        .dashboard-compact .card-header {
+            padding: 0.45rem 0.6rem;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .dashboard-charts .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        @@keyframes rise {
+            from { transform: translateY(6px); opacity: 0.7; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @@media (max-width: 1100px) {
+            .dashboard-kpis {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .dashboard-charts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
+        const groupsLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContactsByGroup.Select(g => g.GroupName)));
+        const groupsValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContactsByGroup.Select(g => g.Count)));
+        const citiesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCities.Select(c => c.City)));
+        const citiesValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCities.Select(c => c.Count)));
+
+        const chartColors = [
+            '#0ea5a3', '#3b82f6', '#f59e0b', '#ef4444', '#22c55e',
+            '#8b5cf6', '#14b8a6', '#f97316', '#06b6d4', '#94a3b8'
+        ];
+
+        const groupsCtx = document.getElementById('groupsChart');
+        if (groupsCtx && groupsLabels.length > 0) {
+            new Chart(groupsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: groupsLabels,
+                    datasets: [{
+                        data: groupsValues,
+                        backgroundColor: chartColors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'left',
+                            labels: { boxWidth: 10, padding: 8, font: { size: 10 } }
+                        }
+                    },
+                    cutout: '66%'
+                }
+            });
+        }
+
+        const citiesCtx = document.getElementById('citiesChart');
+        if (citiesCtx && citiesLabels.length > 0) {
+            new Chart(citiesCtx, {
+                type: 'bar',
+                data: {
+                    labels: citiesLabels,
+                    datasets: [{
+                        label: 'Contacts',
+                        data: citiesValues,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8,
+                        maxBarThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.25)' }, ticks: { precision: 0, font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
         // Auto-refresh statistics every 5 minutes
         setTimeout(() => {
             location.reload();
