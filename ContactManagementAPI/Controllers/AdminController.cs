@@ -121,6 +121,21 @@ namespace ContactManagementAPI.Controllers
             user.IsActive = model.IsActive;
             user.UpdatedAt = DateTime.Now;
 
+            if (string.Equals(user.UserName, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                var administratorsGroupId = _context.UserGroups
+                    .Where(g => g.Name == "Administrators")
+                    .Select(g => g.Id)
+                    .FirstOrDefault();
+
+                user.IsAdmin = true;
+                user.IsActive = true;
+                if (administratorsGroupId > 0)
+                {
+                    user.GroupId = administratorsGroupId;
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
             {
                 user.PasswordHash = _passwordHasher.HashPassword(user, model.NewPassword);
@@ -305,6 +320,13 @@ namespace ContactManagementAPI.Controllers
 
             if (!ModelState.IsValid)
                 return View(model);
+
+            if (string.Equals(group.Name, "Administrators", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(model.Name, "Administrators", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(nameof(GroupEditViewModel.Name), "Administrators group name cannot be changed.");
+                return View(model);
+            }
 
             group.Name = model.Name;
             group.Description = model.Description;
