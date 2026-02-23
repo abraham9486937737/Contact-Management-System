@@ -109,9 +109,13 @@ namespace ContactManagementAPI.Controllers
 
             PopulateFormData();
 
-            if (!currentUser.IsAdmin && currentUser.GroupId > 0)
+            if (!currentUser.IsAdmin)
             {
-                ViewData["ForcedGroupId"] = currentUser.GroupId;
+                var scopedContactGroupId = ResolveContactGroupIdForUser(currentUser);
+                if (scopedContactGroupId.HasValue)
+                {
+                    ViewData["ForcedGroupId"] = scopedContactGroupId.Value;
+                }
             }
 
             return View();
@@ -131,13 +135,14 @@ namespace ContactManagementAPI.Controllers
 
             if (!currentUser.IsAdmin)
             {
-                if (currentUser.GroupId <= 0)
+                var scopedContactGroupId = ResolveContactGroupIdForUser(currentUser);
+                if (!scopedContactGroupId.HasValue)
                 {
                     ModelState.AddModelError(nameof(Contact.GroupId), "Your account is not assigned to a contact group.");
                 }
                 else
                 {
-                    contact.GroupId = currentUser.GroupId;
+                    contact.GroupId = scopedContactGroupId.Value;
                 }
             }
 
@@ -660,7 +665,8 @@ namespace ContactManagementAPI.Controllers
                 {
                     if (!currentUser.IsAdmin)
                     {
-                        if (currentUser.GroupId <= 0)
+                        var scopedContactGroupId = ResolveContactGroupIdForUser(currentUser);
+                        if (!scopedContactGroupId.HasValue)
                         {
                             TempData["ErrorMessage"] = "Your account is not assigned to a contact group.";
                             return RedirectToAction(nameof(Import));
@@ -668,7 +674,7 @@ namespace ContactManagementAPI.Controllers
 
                         foreach (var importedContact in contacts)
                         {
-                            importedContact.GroupId = currentUser.GroupId;
+                            importedContact.GroupId = scopedContactGroupId.Value;
                         }
                     }
 
@@ -782,30 +788,71 @@ namespace ContactManagementAPI.Controllers
             return NotFound();
         }
 
-        private static IQueryable<Contact> ApplyContactScope(IQueryable<Contact> query, AppUser currentUser)
+        private IQueryable<Contact> ApplyContactScope(IQueryable<Contact> query, AppUser currentUser)
         {
             if (currentUser.IsAdmin)
             {
                 return query;
             }
 
-            if (currentUser.GroupId <= 0)
+            var scopedContactGroupId = ResolveContactGroupIdForUser(currentUser);
+            if (!scopedContactGroupId.HasValue)
             {
                 return query.Where(c => false);
             }
 
-            var groupId = currentUser.GroupId;
+            var groupId = scopedContactGroupId.Value;
             return query.Where(c => c.GroupId == groupId);
         }
 
-        private static bool CanAccessContact(AppUser currentUser, Contact contact)
+        private bool CanAccessContact(AppUser currentUser, Contact contact)
         {
             if (currentUser.IsAdmin)
             {
                 return true;
             }
 
-            return currentUser.GroupId > 0 && contact.GroupId == currentUser.GroupId;
+            var scopedContactGroupId = ResolveContactGroupIdForUser(currentUser);
+            return scopedContactGroupId.HasValue && contact.GroupId == scopedContactGroupId.Value;
+        }
+
+        private int? ResolveContactGroupIdForUser(AppUser user)
+        {
+            if (user.IsAdmin)
+            {
+                return null;
+            }
+
+            if (user.GroupId <= 0)
+            {
+                return null;
+            }
+
+            var userGroupName = _context.UserGroups
+                .Where(g => g.Id == user.GroupId)
+                .Select(g => g.Name)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(userGroupName) && userGroupName.StartsWith("ContactGroup - ", StringComparison.OrdinalIgnoreCase))
+            {
+                var contactGroupName = userGroupName.Substring("ContactGroup - ".Length).Trim();
+                var mappedContactGroupId = _context.ContactGroups
+                    .Where(cg => cg.Name == contactGroupName)
+                    .Select(cg => (int?)cg.Id)
+                    .FirstOrDefault();
+
+                if (mappedContactGroupId.HasValue)
+                {
+                    return mappedContactGroupId.Value;
+                }
+            }
+
+            var directMatch = _context.ContactGroups
+                .Where(cg => cg.Id == user.GroupId)
+                .Select(cg => (int?)cg.Id)
+                .FirstOrDefault();
+
+            return directMatch;
         }
 
         #endregion
