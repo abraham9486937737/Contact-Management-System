@@ -147,6 +147,7 @@ namespace ContactManagementAPI.Controllers
             }
 
             NormalizeOptionalBankAccountModelState();
+            ValidateDuplicateContact(contact);
 
             if (ModelState.IsValid)
             {
@@ -285,6 +286,8 @@ namespace ContactManagementAPI.Controllers
                 PopulateFormData(existingContact, PrepareBankAccounts(bankAccounts));
                 return View(existingContact);
             }
+
+            ValidateDuplicateContact(existingContact, id);
 
             if (ModelState.IsValid)
             {
@@ -568,6 +571,175 @@ namespace ContactManagementAPI.Controllers
             }
         }
 
+        private void ValidateDuplicateContact(Contact contact, int? excludeContactId = null)
+        {
+            var normalizedMobile = NormalizeDigits(contact.Mobile1);
+            var normalizedAadhar = NormalizeDigits(contact.AadharNumber);
+
+            if (!string.IsNullOrWhiteSpace(normalizedMobile))
+            {
+                var mobileConflict = _context.Contacts
+                    .AsNoTracking()
+                    .Where(c => c.Id != (excludeContactId ?? 0) && !string.IsNullOrWhiteSpace(c.Mobile1))
+                    .Select(c => new { c.FirstName, c.LastName, c.Mobile1 })
+                    .ToList()
+                    .FirstOrDefault(c => NormalizeDigits(c.Mobile1) == normalizedMobile);
+
+                if (mobileConflict != null)
+                {
+                    ModelState.AddModelError(nameof(Contact.Mobile1),
+                        $"Mobile number already exists for contact '{mobileConflict.FirstName} {mobileConflict.LastName}'.");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedAadhar))
+            {
+                var aadharConflict = _context.Contacts
+                    .AsNoTracking()
+                    .Where(c => c.Id != (excludeContactId ?? 0) && !string.IsNullOrWhiteSpace(c.AadharNumber))
+                    .Select(c => new { c.FirstName, c.LastName, c.AadharNumber })
+                    .ToList()
+                    .FirstOrDefault(c => NormalizeDigits(c.AadharNumber) == normalizedAadhar);
+
+                if (aadharConflict != null)
+                {
+                    ModelState.AddModelError(nameof(Contact.AadharNumber),
+                        $"Aadhar number already exists for contact '{aadharConflict.FirstName} {aadharConflict.LastName}'.");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedMobile) && string.IsNullOrWhiteSpace(normalizedAadhar))
+            {
+                var firstName = NormalizeText(contact.FirstName);
+                var lastName = NormalizeText(contact.LastName);
+                var nickName = NormalizeText(contact.NickName);
+
+                if (!string.IsNullOrWhiteSpace(firstName))
+                {
+                    var nameConflict = _context.Contacts
+                        .AsNoTracking()
+                        .Where(c => c.Id != (excludeContactId ?? 0) && !string.IsNullOrWhiteSpace(c.FirstName))
+                        .Select(c => new { c.FirstName, c.LastName, c.NickName })
+                        .ToList()
+                        .FirstOrDefault(c =>
+                            NormalizeText(c.FirstName) == firstName &&
+                            NormalizeText(c.LastName) == lastName &&
+                            NormalizeText(c.NickName) == nickName);
+
+                    if (nameConflict != null)
+                    {
+                        ModelState.AddModelError(nameof(Contact.FirstName),
+                            "A contact with the same First Name, Last Name, and Nick Name already exists. Provide Mobile1 or Aadhar if this is a different person.");
+                    }
+                }
+            }
+        }
+
+        private List<Contact> FilterDuplicateImportedContacts(List<Contact> contacts, List<string> errors)
+        {
+            var validContacts = new List<Contact>();
+
+            var existingContacts = _context.Contacts
+                .AsNoTracking()
+                .Select(c => new { c.FirstName, c.LastName, c.NickName, c.Mobile1, c.AadharNumber })
+                .ToList();
+
+            var seenMobiles = new HashSet<string>();
+            var seenAadhars = new HashSet<string>();
+            var seenNames = new HashSet<string>();
+
+            for (var i = 0; i < contacts.Count; i++)
+            {
+                var contact = contacts[i];
+                var rowLabel = $"Row {i + 1} ({contact.FirstName} {contact.LastName})";
+
+                var normalizedMobile = NormalizeDigits(contact.Mobile1);
+                var normalizedAadhar = NormalizeDigits(contact.AadharNumber);
+                var firstName = NormalizeText(contact.FirstName);
+                var lastName = NormalizeText(contact.LastName);
+                var nickName = NormalizeText(contact.NickName);
+                var nameKey = $"{firstName}|{lastName}|{nickName}";
+
+                var hasError = false;
+
+                if (!string.IsNullOrWhiteSpace(normalizedMobile))
+                {
+                    var existsInDb = existingContacts.Any(c => NormalizeDigits(c.Mobile1) == normalizedMobile);
+                    var existsInImport = seenMobiles.Contains(normalizedMobile);
+                    if (existsInDb || existsInImport)
+                    {
+                        errors.Add($"{rowLabel}: Mobile1 already exists.");
+                        hasError = true;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(normalizedAadhar))
+                {
+                    var existsInDb = existingContacts.Any(c => NormalizeDigits(c.AadharNumber) == normalizedAadhar);
+                    var existsInImport = seenAadhars.Contains(normalizedAadhar);
+                    if (existsInDb || existsInImport)
+                    {
+                        errors.Add($"{rowLabel}: AadharNumber already exists.");
+                        hasError = true;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(normalizedMobile) && string.IsNullOrWhiteSpace(normalizedAadhar))
+                {
+                    var existsInDb = existingContacts.Any(c =>
+                        NormalizeText(c.FirstName) == firstName &&
+                        NormalizeText(c.LastName) == lastName &&
+                        NormalizeText(c.NickName) == nickName);
+                    var existsInImport = seenNames.Contains(nameKey);
+
+                    if (existsInDb || existsInImport)
+                    {
+                        errors.Add($"{rowLabel}: Same First Name + Last Name + Nick Name already exists.");
+                        hasError = true;
+                    }
+                }
+
+                if (hasError)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(normalizedMobile))
+                {
+                    seenMobiles.Add(normalizedMobile);
+                }
+
+                if (!string.IsNullOrWhiteSpace(normalizedAadhar))
+                {
+                    seenAadhars.Add(normalizedAadhar);
+                }
+
+                if (string.IsNullOrWhiteSpace(normalizedMobile) && string.IsNullOrWhiteSpace(normalizedAadhar))
+                {
+                    seenNames.Add(nameKey);
+                }
+
+                validContacts.Add(contact);
+            }
+
+            return validContacts;
+        }
+
+        private static string NormalizeDigits(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return new string(value.Where(char.IsDigit).ToArray());
+        }
+
+        private static string NormalizeText(string? value)
+        {
+            return (value ?? string.Empty).Trim().ToUpperInvariant();
+        }
+
         #region Import/Export Actions
 
         // GET: Home/Dashboard - Display contact statistics
@@ -676,6 +848,19 @@ namespace ContactManagementAPI.Controllers
                         {
                             importedContact.GroupId = scopedContactGroupId.Value;
                         }
+                    }
+
+                    contacts = FilterDuplicateImportedContacts(contacts, errors);
+
+                    if (errors.Any())
+                    {
+                        TempData["ErrorMessage"] = $"Import completed with errors:<br/>{string.Join("<br/>", errors)}";
+                    }
+
+                    if (!contacts.Any())
+                    {
+                        TempData["ErrorMessage"] = TempData["ErrorMessage"] ?? "No valid contacts found in the file.";
+                        return RedirectToAction(nameof(Import));
                     }
 
                     // Set change tracking to true for saving
