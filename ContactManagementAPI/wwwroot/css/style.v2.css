@@ -115,18 +115,24 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: nowrap;
     position: relative;
 }
 
 .navbar-brand h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 600;
     display: flex;
     align-items: center;
+    white-space: nowrap;
 }
 
 .navbar-brand i {
     margin-right: 0.5rem;
+}
+
+.brand-text {
+    white-space: nowrap;
 }
 
 /* Mobile Menu Toggle Button */
@@ -177,21 +183,23 @@ body {
 
 .navbar-links {
     display: flex;
-    gap: 1rem;
+    gap: 0.45rem;
     align-items: center;
+    flex-wrap: nowrap;
     transition: transform var(--transition-speed), opacity var(--transition-speed);
 }
 
 .nav-link {
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.7rem;
     border-radius: 4px;
     transition: background-color var(--transition-speed), transform 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-height: var(--touch-target-min);
+    gap: 0.35rem;
+    min-height: 38px;
+    font-size: 0.95rem;
     white-space: nowrap;
 }
 
@@ -207,7 +215,7 @@ body {
 
 .nav-link.btn-primary {
     background-color: var(--secondary-color);
-    padding: 0.5rem 1.2rem;
+    padding: 0.45rem 0.95rem;
 }
 
 .nav-link.btn-primary:hover {
@@ -216,15 +224,16 @@ body {
 
 .nav-auth {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.35rem;
     align-items: center;
 }
 
 .nav-user {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    font-size: 0.95rem;
     color: white;
 }
 
