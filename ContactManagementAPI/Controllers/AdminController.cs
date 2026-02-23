@@ -3,6 +3,7 @@ using System.Linq;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Security;
+using ContactManagementAPI.Services;
 using ContactManagementAPI.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,15 @@ namespace ContactManagementAPI.Controllers
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserContextService _userContextService;
+        private readonly AdminHistoryService _adminHistoryService;
         private readonly PasswordHasher<AppUser> _passwordHasher = new();
 
-        public AdminController(ApplicationDbContext context)
+        public AdminController(ApplicationDbContext context, UserContextService userContextService, AdminHistoryService adminHistoryService)
         {
             _context = context;
+            _userContextService = userContextService;
+            _adminHistoryService = adminHistoryService;
         }
 
         [RequireRight(RightsCatalog.AdminManageUsers)]
@@ -68,6 +73,13 @@ namespace ContactManagementAPI.Controllers
             user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
             _context.AppUsers.Add(user);
             _context.SaveChanges();
+
+            _adminHistoryService.Log(
+                actionType: "Create",
+                entityType: "User",
+                entityId: user.Id,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Created user '{user.UserName}' in group id '{user.GroupId}'.");
 
             TempData["SuccessMessage"] = "User created successfully.";
             return RedirectToAction("Users");
@@ -142,6 +154,14 @@ namespace ContactManagementAPI.Controllers
             }
 
             _context.SaveChanges();
+
+            _adminHistoryService.Log(
+                actionType: "Edit",
+                entityType: "User",
+                entityId: user.Id,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Edited user '{user.UserName}' (Active: {user.IsActive}, Admin: {user.IsAdmin}).");
+
             TempData["SuccessMessage"] = "User updated successfully.";
             return RedirectToAction("Users");
         }
@@ -230,6 +250,14 @@ namespace ContactManagementAPI.Controllers
             }
 
             _context.SaveChanges();
+
+            _adminHistoryService.Log(
+                actionType: "Edit",
+                entityType: "UserRights",
+                entityId: model.UserId,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Updated rights for user '{user.UserName}'.");
+
             TempData["SuccessMessage"] = "User rights updated successfully.";
             return RedirectToAction("UserRights", new { id = model.UserId });
         }
@@ -283,6 +311,13 @@ namespace ContactManagementAPI.Controllers
             _context.GroupRights.AddRange(rights);
             _context.SaveChanges();
 
+            _adminHistoryService.Log(
+                actionType: "Create",
+                entityType: "Group",
+                entityId: group.Id,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Created group '{group.Name}'.");
+
             TempData["SuccessMessage"] = "Group created successfully.";
             return RedirectToAction("Groups");
         }
@@ -331,6 +366,13 @@ namespace ContactManagementAPI.Controllers
             group.Name = model.Name;
             group.Description = model.Description;
             _context.SaveChanges();
+
+            _adminHistoryService.Log(
+                actionType: "Edit",
+                entityType: "Group",
+                entityId: group.Id,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Edited group '{group.Name}'.");
 
             TempData["SuccessMessage"] = "Group updated successfully.";
             return RedirectToAction("Groups");
@@ -393,8 +435,40 @@ namespace ContactManagementAPI.Controllers
             }
 
             _context.SaveChanges();
+
+            _adminHistoryService.Log(
+                actionType: "Edit",
+                entityType: "GroupRights",
+                entityId: model.GroupId,
+                performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                details: $"Updated rights for group '{model.GroupName}'.");
+
             TempData["SuccessMessage"] = "Group rights updated successfully.";
             return RedirectToAction("GroupRights", new { id = model.GroupId });
+        }
+
+        [RequireRight(RightsCatalog.AdminManageUsers)]
+        public IActionResult History(int take = 200)
+        {
+            var entries = _adminHistoryService
+                .GetLatest(take)
+                .Select(e => new AdminHistoryEntryViewModel
+                {
+                    ActionType = e.ActionType,
+                    EntityType = e.EntityType,
+                    EntityId = e.EntityId,
+                    Details = e.Details,
+                    PerformedBy = e.PerformedBy,
+                    PerformedAt = e.PerformedAt
+                })
+                .ToList();
+
+            var model = new AdminHistoryListViewModel
+            {
+                Entries = entries
+            };
+
+            return View(model);
         }
     }
 }

@@ -14,13 +14,23 @@ namespace ContactManagementAPI.Controllers
         private readonly FileUploadService _fileUploadService;
         private readonly ImportExportService _importExportService;
         private readonly ContactStatisticsService _statisticsService;
+        private readonly UserContextService _userContextService;
+        private readonly AdminHistoryService _adminHistoryService;
 
-        public HomeController(ApplicationDbContext context, FileUploadService fileUploadService, ImportExportService importExportService, ContactStatisticsService statisticsService)
+        public HomeController(
+            ApplicationDbContext context,
+            FileUploadService fileUploadService,
+            ImportExportService importExportService,
+            ContactStatisticsService statisticsService,
+            UserContextService userContextService,
+            AdminHistoryService adminHistoryService)
         {
             _context = context;
             _fileUploadService = fileUploadService;
             _importExportService = importExportService;
             _statisticsService = statisticsService;
+            _userContextService = userContextService;
+            _adminHistoryService = adminHistoryService;
         }
 
         // GET: Home/Index - Display all contacts with search functionality
@@ -116,6 +126,13 @@ namespace ContactManagementAPI.Controllers
                         await _context.SaveChangesAsync();
                     }
                 }
+
+                _adminHistoryService.Log(
+                    actionType: "Create",
+                    entityType: "Contact",
+                    entityId: contact.Id,
+                    performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                    details: $"Created contact '{contact.FirstName} {contact.LastName}'.");
                 
                 TempData["SuccessMessage"] = "Contact created successfully!";
                 return RedirectToAction(nameof(Details), new { id = contact.Id });
@@ -243,6 +260,14 @@ namespace ContactManagementAPI.Controllers
                     }
                     
                     await _context.SaveChangesAsync();
+
+                    _adminHistoryService.Log(
+                        actionType: "Edit",
+                        entityType: "Contact",
+                        entityId: existingContact.Id,
+                        performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
+                        details: $"Edited contact '{existingContact.FirstName} {existingContact.LastName}'.");
+
                     TempData["SuccessMessage"] = "Contact updated successfully!";
                     return RedirectToAction(nameof(Details), new { id = existingContact.Id });
                 }

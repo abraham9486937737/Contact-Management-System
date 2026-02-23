@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -91,5 +92,20 @@ namespace ContactManagementAPI.ViewModels
         public string UserName { get; set; } = string.Empty;
         public string? GroupName { get; set; }
         public List<RightAssignmentViewModel> Rights { get; set; } = new();
+    }
+
+    public class AdminHistoryEntryViewModel
+    {
+        public string ActionType { get; set; } = string.Empty;
+        public string EntityType { get; set; } = string.Empty;
+        public int? EntityId { get; set; }
+        public string Details { get; set; } = string.Empty;
+        public string PerformedBy { get; set; } = string.Empty;
+        public DateTime PerformedAt { get; set; }
+    }
+
+    public class AdminHistoryListViewModel
+    {
+        public List<AdminHistoryEntryViewModel> Entries { get; set; } = new();
     }
 }
