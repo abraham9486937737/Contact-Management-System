@@ -37,8 +37,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> Index(string searchTerm = "")
         {
-            var contacts = _context.Contacts
-                .Include(c => c.Group)
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contacts = ApplyContactScope(
+                    _context.Contacts
+                        .Include(c => c.Group)
+                        .AsQueryable(),
+                    currentUser)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchTerm))
@@ -63,6 +72,12 @@ namespace ContactManagementAPI.Controllers
             if (id == null)
                 return NotFound();
 
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var contact = await _context.Contacts
                 .Include(c => c.Group)
                 .Include(c => c.Photos)
@@ -73,6 +88,11 @@ namespace ContactManagementAPI.Controllers
             if (contact == null)
                 return NotFound();
 
+            if (!CanAccessContact(currentUser, contact))
+            {
+                return Forbid();
+            }
+
             return View(contact);
         }
 
@@ -80,7 +100,19 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsCreate)]
         public IActionResult Create()
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             PopulateFormData();
+
+            if (!currentUser.IsAdmin && currentUser.GroupId > 0)
+            {
+                ViewData["ForcedGroupId"] = currentUser.GroupId;
+            }
+
             return View();
         }
 
@@ -90,6 +122,24 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsCreate)]
         public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Gender,DateOfBirth,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,PassportNumber,PanNumber,AadharNumber,DrivingLicenseNumber,VotersId,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact, List<ContactBankAccount>? bankAccounts, IFormFile? profilePhoto)
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                if (currentUser.GroupId <= 0)
+                {
+                    ModelState.AddModelError(nameof(Contact.GroupId), "Your account is not assigned to a contact group.");
+                }
+                else
+                {
+                    contact.GroupId = currentUser.GroupId;
+                }
+            }
+
             NormalizeOptionalBankAccountModelState();
 
             if (ModelState.IsValid)
@@ -148,6 +198,18 @@ namespace ContactManagementAPI.Controllers
             if (id == null)
                 return NotFound();
 
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Only admin can edit existing contacts.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var contact = await _context.Contacts
                 .Include(c => c.BankAccounts)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -164,6 +226,18 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsEdit)]
         public async Task<IActionResult> Edit(int id, List<ContactBankAccount>? bankAccounts, IFormFile? profilePhoto)
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Only admin can edit existing contacts.";
+                return RedirectToAction(nameof(Index));
+            }
+
             NormalizeOptionalBankAccountModelState();
 
             var existingContact = await _context.Contacts
@@ -289,6 +363,18 @@ namespace ContactManagementAPI.Controllers
             if (id == null)
                 return NotFound();
 
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var contact = await _context.Contacts
                 .Include(c => c.Group)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -305,6 +391,18 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsDelete)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var contact = await _context.Contacts.FindAsync(id);
             if (contact != null)
             {
@@ -321,6 +419,18 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsDelete)]
         public async Task<IActionResult> DeleteMultiple(List<int> contactIds)
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                return RedirectToAction(nameof(Index));
+            }
+
             if (contactIds == null || !contactIds.Any())
             {
                 TempData["ErrorMessage"] = "No contacts selected for deletion.";
@@ -458,6 +568,18 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> Dashboard()
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Dashboard is available only for admin.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var statistics = await _statisticsService.GetStatisticsAsync();
             return View(statistics);
         }
@@ -466,6 +588,18 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> FindDuplicates()
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!currentUser.IsAdmin)
+            {
+                TempData["ErrorMessage"] = "Find Duplicates is available only for admin.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var duplicates = await _statisticsService.FindDuplicatesAsync();
             return View(duplicates);
         }
@@ -483,6 +617,12 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsCreate)]
         public async Task<IActionResult> ImportFile(IFormFile file, string fileType)
         {
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (file == null || file.Length == 0)
             {
                 TempData["ErrorMessage"] = "Please select a file to import.";
@@ -517,6 +657,20 @@ namespace ContactManagementAPI.Controllers
 
                 if (contacts.Any())
                 {
+                    if (!currentUser.IsAdmin)
+                    {
+                        if (currentUser.GroupId <= 0)
+                        {
+                            TempData["ErrorMessage"] = "Your account is not assigned to a contact group.";
+                            return RedirectToAction(nameof(Import));
+                        }
+
+                        foreach (var importedContact in contacts)
+                        {
+                            importedContact.GroupId = currentUser.GroupId;
+                        }
+                    }
+
                     // Set change tracking to true for saving
                     _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
                     
@@ -545,9 +699,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> ExportExcel()
         {
-            var contacts = await _context.Contacts
-                .Include(c => c.Group)
-                .OrderBy(c => c.FirstName)
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contacts = await ApplyContactScope(
+                    _context.Contacts
+                        .Include(c => c.Group)
+                        .OrderBy(c => c.FirstName),
+                    currentUser)
                 .ToListAsync();
 
             var fileBytes = await _importExportService.ExportToExcel(contacts);
@@ -560,9 +722,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> ExportCsv()
         {
-            var contacts = await _context.Contacts
-                .Include(c => c.Group)
-                .OrderBy(c => c.FirstName)
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contacts = await ApplyContactScope(
+                    _context.Contacts
+                        .Include(c => c.Group)
+                        .OrderBy(c => c.FirstName),
+                    currentUser)
                 .ToListAsync();
 
             var fileBytes = await _importExportService.ExportToCsv(contacts);
@@ -575,9 +745,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsView)]
         public async Task<IActionResult> ExportPdf()
         {
-            var contacts = await _context.Contacts
-                .Include(c => c.Group)
-                .OrderBy(c => c.FirstName)
+            var currentUser = _userContextService.CurrentUser;
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contacts = await ApplyContactScope(
+                    _context.Contacts
+                        .Include(c => c.Group)
+                        .OrderBy(c => c.FirstName),
+                    currentUser)
                 .ToListAsync();
 
             var fileBytes = await _importExportService.ExportToPdf(contacts);
@@ -601,6 +779,32 @@ namespace ContactManagementAPI.Controllers
             }
 
             return NotFound();
+        }
+
+        private static IQueryable<Contact> ApplyContactScope(IQueryable<Contact> query, AppUser currentUser)
+        {
+            if (currentUser.IsAdmin)
+            {
+                return query;
+            }
+
+            if (currentUser.GroupId <= 0)
+            {
+                return query.Where(c => false);
+            }
+
+            var groupId = currentUser.GroupId;
+            return query.Where(c => c.GroupId == groupId);
+        }
+
+        private static bool CanAccessContact(AppUser currentUser, Contact contact)
+        {
+            if (currentUser.IsAdmin)
+            {
+                return true;
+            }
+
+            return currentUser.GroupId > 0 && contact.GroupId == currentUser.GroupId;
         }
 
         #endregion
