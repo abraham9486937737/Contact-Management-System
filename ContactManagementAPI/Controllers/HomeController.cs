@@ -90,7 +90,8 @@ namespace ContactManagementAPI.Controllers
 
             if (!CanAccessContact(currentUser, contact))
             {
-                return Forbid();
+                TempData["ErrorMessage"] = "You can view only contacts from your group.";
+                return RedirectToAction(nameof(Index));
             }
 
             return View(contact);
