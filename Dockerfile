@@ -12,8 +12,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
-EXPOSE 8080
+EXPOSE 7860
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV DISABLE_HTTPS_REDIRECTION=true
 
-ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=${ASPNETCORE_URLS:-http://0.0.0.0:${PORT:-8080}} dotnet ContactManagementAPI.dll"]
+ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=${ASPNETCORE_URLS:-http://0.0.0.0:${PORT:-7860}} dotnet ContactManagementAPI.dll"]
