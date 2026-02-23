@@ -4,7 +4,306 @@
     ViewData["Title"] = $"Contact - {Model.FirstName} {Model.LastName}";
 }
 
-<div class="details-container">
+<style>
+    .details-container-new {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    
+    .details-header-new {
+        background: linear-gradient(135deg, #FF8C00 0%, #E67E00 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+    }
+    
+    .details-header-new h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        flex-grow: 1;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .details-content {
+        background: white;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .details-body {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 2rem;
+    }
+    
+    .sidebar {
+        border-right: 2px solid #e2e8f0;
+        padding-right: 2rem;
+    }
+    
+    .main-info {
+        display: grid;
+        gap: 1.5rem;
+    }
+    
+    .photo-card {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .profile-photo-new {
+        width: 100%;
+        max-width: 250px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .photo-placeholder-new {
+        width: 100%;
+        height: 250px;
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+    }
+    
+    .photo-count {
+        background: linear-gradient(135deg, #0EA5E9 0%, #0284c7 100%);
+        color: white;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin: 1rem 0;
+        font-weight: 600;
+    }
+    
+    .documents-card {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .documents-card h4 {
+        color: #003D82;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .doc-list-new {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem 0;
+    }
+    
+    .doc-list-new li {
+        background: white;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .doc-list-new i {
+        color: #FF8C00;
+        margin-right: 0.5rem;
+    }
+    
+    .info-card {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 2px solid #e2e8f0;
+        border-left: 4px solid #FF8C00;
+    }
+    
+    .info-card h4 {
+        color: #003D82;
+        margin: 0 0 1.25rem 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-row-new {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .info-row-new:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-label i {
+        color: #FF8C00;
+    }
+    
+    .info-value {
+        color: #1e293b;
+        font-weight: 500;
+        word-break: break-word;
+    }
+    
+    .info-value a {
+        color: #0EA5E9;
+        text-decoration: none;
+    }
+    
+    .info-value a:hover {
+        text-decoration: underline;
+    }
+    
+    .metadata-card {
+        background: linear-gradient(135deg, #003D82 0%, #002954 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-top: 1.5rem;
+    }
+    
+    .metadata-card p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    
+    .btn-action {
+        padding: 0.6rem 1.25rem;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-back {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-back:hover {
+        background: #4b5563;
+    }
+    
+    .btn-edit {
+        background: #0EA5E9;
+        color: white;
+    }
+    
+    .btn-edit:hover {
+        background: #0284c7;
+    }
+    
+    .btn-delete {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .btn-delete:hover {
+        background: #dc2626;
+    }
+    
+    .btn-full {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem;
+        font-size: 0.95rem;
+    }
+    
+    .btn-gallery {
+        background: linear-gradient(135deg, #FF8C00 0%, #E67E00 100%);
+        color: white;
+    }
+    
+    .btn-gallery:hover {
+        background: linear-gradient(135deg, #E67E00 0%, #D67000 100%);
+    }
+    
+    .btn-docs {
+        background: #003D82;
+        color: white;
+    }
+    
+    .btn-docs:hover {
+        background: #002954;
+    }
+    
+    .empty-message {
+        color: #94a3b8;
+        font-style: italic;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    @@media (max-width: 968px) {
+        .details-body {
+            grid-template-columns: 1fr;
+        }
+        
+        .sidebar {
+            border-right: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding-right: 0;
+            padding-bottom: 2rem;
+        }
+        
+        .details-header-new {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .details-header-new h2 {
+            order: 1;
+        }
+    }
+</style>
+
+<div class="details-container-new">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;">
@@ -12,197 +311,253 @@
         </div>
     }
     
-    <div class="details-header">
-        <a href="/home/index" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Contacts
-        </a>
-        <h2>@Model.FirstName @Model.LastName</h2>
-        <div class="details-actions">
-            @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
-            {
-                <a href="/home/edit/@Model.Id" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Edit
-                </a>
-            }
-            @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
-            {
-                <a href="/home/delete/@Model.Id" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Delete
-                </a>
-            }
-        </div>
-    </div>
-
-    <div class="details-grid">
-        <div class="details-left">
-            <div class="photo-section">
-                @if (!string.IsNullOrEmpty(Model.PhotoPath))
+    <div class="details-content">
+        <div class="details-header-new">
+            <a href="/home/index" class="btn-action btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Contacts
+            </a>
+            <h2>@Model.FirstName @Model.LastName</h2>
+            <div class="header-actions">
+                @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
                 {
-                    <img src="@Model.PhotoPath" alt="@Model.FirstName @Model.LastName" class="profile-photo" />
+                    <a href="/home/edit/@Model.Id" class="btn-action btn-edit">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
                 }
-                else
+                @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
                 {
-                    <div class="photo-placeholder-large">
-                        <i class="fas fa-user"></i>
-                    </div>
-                }
-                <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center;">
-                    <strong style="color: #1976d2;">@Model.Photos.Count</strong> Photo@(Model.Photos.Count != 1 ? "s" : "") in Album
-                </div>
-                @if (UserContext.HasRight(RightsCatalog.PhotosManage))
-                {
-                    <a href="/photo/gallery/@Model.Id" class="btn btn-primary btn-block">
-                        <i class="fas fa-images"></i> Photo Gallery (@Model.Photos.Count)
+                    <a href="/home/delete/@Model.Id" class="btn-action btn-delete">
+                        <i class="fas fa-trash"></i> Delete
                     </a>
                 }
             </div>
-
-            <div class="documents-section">
-                <h4><i class="fas fa-paperclip"></i> Documents (@Model.Documents.Count)</h4>
-                @if (Model.Documents.Count == 0)
-                {
-                    <p style="color: #666; font-style: italic; padding: 10px 0;">No documents attached</p>
-                }
-                else
-                {
-                    <ul class="doc-list">
-                        @foreach (var doc in Model.Documents.Take(5))
-                        {
-                            <li>
-                                <i class="fas fa-file"></i> @doc.FileName
-                                <a href="/document/download/@doc.Id/@Model.Id" class="btn btn-sm btn-info" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </li>
-                        }
-                        @if (Model.Documents.Count > 5)
-                        {
-                            <li style="color: #666; font-style: italic; padding: 5px 0;">
-                                ... and @(Model.Documents.Count - 5) more
-                            </li>
-                        }
-                    </ul>
-                }
-                <a href="/document/list/@Model.Id" class="btn btn-primary btn-block">
-                    <i class="fas fa-plus"></i> Manage Documents
-                </a>
-            </div>
         </div>
 
-        <div class="details-right">
-            <div class="info-section">
-                <h4>Basic Information</h4>
-                <div class="info-row">
-                    <span class="label">Full Name:</span>
-                    <span class="value">@Model.FirstName @Model.LastName</span>
+        <div class="details-body">
+            <div class="sidebar">
+                <div class="photo-card">
+                    @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                    {
+                        <img src="@Model.PhotoPath" alt="@Model.FirstName @Model.LastName" class="profile-photo-new" />
+                    }
+                    else
+                    {
+                        <div class="photo-placeholder-new">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    }
+                    <div class="photo-count">
+                        <i class="fas fa-images"></i> @Model.Photos.Count Photo@(Model.Photos.Count != 1 ? "s" : "") in Album
+                    </div>
+                    @if (UserContext.HasRight(RightsCatalog.PhotosManage))
+                    {
+                        <a href="/photo/gallery/@Model.Id" class="btn-action btn-full btn-gallery">
+                            <i class="fas fa-images"></i> View Photo Gallery
+                        </a>
+                    }
                 </div>
-                @if (!string.IsNullOrEmpty(Model.NickName))
-                {
-                    <div class="info-row">
-                        <span class="label">Nick Name:</span>
-                        <span class="value">@Model.NickName</span>
-                    </div>
-                }
-                @if (Model.Group != null)
-                {
-                    <div class="info-row">
-                        <span class="label">Group:</span>
-                        <span class="value">@Model.Group.Name</span>
-                    </div>
-                }
+
+                <div class="documents-card">
+                    <h4><i class="fas fa-paperclip"></i> Documents (@Model.Documents.Count)</h4>
+                    @if (Model.Documents.Count == 0)
+                    {
+                        <p class="empty-message">No documents attached</p>
+                    }
+                    else
+                    {
+                        <ul class="doc-list-new">
+                            @foreach (var doc in Model.Documents.Take(5))
+                            {
+                                <li>
+                                    <span><i class="fas fa-file"></i> @doc.FileName</span>
+                                    <a href="/document/download/@doc.Id/@Model.Id" class="btn-action" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #0EA5E9;" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                            }
+                            @if (Model.Documents.Count > 5)
+                            {
+                                <li style="border: none; justify-content: center;">
+                                    <span style="color: #64748b; font-style: italic;">
+                                        ... and @(Model.Documents.Count - 5) more
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <a href="/document/list/@Model.Id" class="btn-action btn-full btn-docs">
+                        <i class="fas fa-plus"></i> Manage Documents
+                    </a>
+                </div>
             </div>
 
-            <div class="info-section">
-                <h4>Contact Information</h4>
-                @if (!string.IsNullOrEmpty(Model.Email))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fas fa-envelope"></i> Email:</span>
-                        <span class="value"><a href="mailto:@Model.Email">@Model.Email</a></span>
+            <div class="main-info">
+                <div class="info-card">
+                    <h4>Basic Information</h4>
+                    <div class="info-row-new">
+                        <span class="info-label">Full Name:</span>
+                        <span class="info-value">@Model.FirstName @Model.LastName</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.Mobile1))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fas fa-phone"></i> Mobile 1:</span>
-                        <span class="value">@Model.Mobile1</span>
+                    <div class="info-row-new">
+                        <span class="info-label">Nick Name:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.NickName) ? "-" : Model.NickName)</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.Mobile2))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fas fa-phone"></i> Mobile 2:</span>
-                        <span class="value">@Model.Mobile2</span>
+                    <div class="info-row-new">
+                        <span class="info-label">Gender:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Gender) ? "-" : Model.Gender)</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.Mobile3))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fas fa-phone"></i> Mobile 3:</span>
-                        <span class="value">@Model.Mobile3</span>
+                    <div class="info-row-new">
+                        <span class="info-label">Date of Birth:</span>
+                        <span class="info-value">@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd/MM/yyyy") : "-")</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.WhatsAppNumber))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fab fa-whatsapp"></i> WhatsApp:</span>
-                        <span class="value">@Model.WhatsAppNumber</span>
+                    <div class="info-row-new">
+                        <span class="info-label">Group:</span>
+                        <span class="info-value">@(Model.Group?.Name ?? "-")</span>
                     </div>
-                }
-            </div>
+                </div>
 
-            <div class="info-section">
-                <h4>Address Information</h4>
-                @if (!string.IsNullOrEmpty(Model.Address))
-                {
-                    <div class="info-row">
-                        <span class="label"><i class="fas fa-map-marker-alt"></i> Address:</span>
-                        <span class="value">@Model.Address</span>
+                <div class="info-card">
+                    <h4>Contact Information</h4>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fas fa-envelope"></i> Email:</span>
+                        <span class="info-value">
+                            @if (string.IsNullOrWhiteSpace(Model.Email))
+                            {
+                                @:-
+                            }
+                            else
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                        </span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.City))
-                {
-                    <div class="info-row">
-                        <span class="label">City:</span>
-                        <span class="value">@Model.City</span>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fas fa-phone"></i> Mobile 1:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Mobile1) ? "-" : Model.Mobile1)</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.State))
-                {
-                    <div class="info-row">
-                        <span class="label">State:</span>
-                        <span class="value">@Model.State</span>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fas fa-phone"></i> Mobile 2:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Mobile2) ? "-" : Model.Mobile2)</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.PostalCode))
-                {
-                    <div class="info-row">
-                        <span class="label">Postal Code:</span>
-                        <span class="value">@Model.PostalCode</span>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fas fa-phone"></i> Mobile 3:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Mobile3) ? "-" : Model.Mobile3)</span>
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.Country))
-                {
-                    <div class="info-row">
-                        <span class="label">Country:</span>
-                        <span class="value">@Model.Country</span>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fab fa-whatsapp"></i> WhatsApp:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.WhatsAppNumber) ? "-" : Model.WhatsAppNumber)</span>
                     </div>
-                }
-            </div>
+                </div>
 
-            @if (!string.IsNullOrEmpty(Model.OtherDetails))
-            {
-                <div class="info-section">
+                <div class="info-card">
+                    <h4>Address Information</h4>
+                    <div class="info-row-new">
+                        <span class="info-label"><i class="fas fa-map-marker-alt"></i> Address:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">City:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.City) ? "-" : Model.City)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">State:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.State) ? "-" : Model.State)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">Postal Code:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.PostalCode) ? "-" : Model.PostalCode)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">Country:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.Country) ? "-" : Model.Country)</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h4>Identity Information</h4>
+                    <div class="info-row-new">
+                        <span class="info-label">Passport Number:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.PassportNumber) ? "-" : Model.PassportNumber)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">PAN Number:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.PanNumber) ? "-" : Model.PanNumber)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">Aadhar Number:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.AadharNumber) ? "-" : Model.AadharNumber)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">Driving License Number:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.DrivingLicenseNumber) ? "-" : Model.DrivingLicenseNumber)</span>
+                    </div>
+                    <div class="info-row-new">
+                        <span class="info-label">Voters ID:</span>
+                        <span class="info-value">@(string.IsNullOrWhiteSpace(Model.VotersId) ? "-" : Model.VotersId)</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h4>Bank Information</h4>
+                    @if (Model.BankAccounts != null && Model.BankAccounts.Any())
+                    {
+                        @foreach (var bankAccount in Model.BankAccounts.OrderBy(b => b.Id))
+                        {
+                            <div style="margin-bottom: 12px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                @if (!string.IsNullOrEmpty(bankAccount.AccountNumber))
+                                {
+                                    <div class="info-row-new">
+                                        <span class="info-label">Bank Account Number:</span>
+                                        <span class="info-value">@bankAccount.AccountNumber</span>
+                                    </div>
+                                }
+                                <div class="info-row-new">
+                                    <span class="info-label">Bank Name:</span>
+                                    <span class="info-value">@(string.IsNullOrWhiteSpace(bankAccount.BankName) ? "-" : bankAccount.BankName)</span>
+                                </div>
+                                <div class="info-row-new">
+                                    <span class="info-label">Branch Name:</span>
+                                    <span class="info-value">@(string.IsNullOrWhiteSpace(bankAccount.BranchName) ? "-" : bankAccount.BranchName)</span>
+                                </div>
+                                <div class="info-row-new">
+                                    <span class="info-label">IFSC Code:</span>
+                                    <span class="info-value">@(string.IsNullOrWhiteSpace(bankAccount.IfscCode) ? "-" : bankAccount.IfscCode)</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="info-row-new">
+                            <span class="info-label">Bank Account Number:</span>
+                            <span class="info-value">@(string.IsNullOrWhiteSpace(Model.BankAccountNumber) ? "-" : Model.BankAccountNumber)</span>
+                        </div>
+                        <div class="info-row-new">
+                            <span class="info-label">Bank Name:</span>
+                            <span class="info-value">@(string.IsNullOrWhiteSpace(Model.BankName) ? "-" : Model.BankName)</span>
+                        </div>
+                        <div class="info-row-new">
+                            <span class="info-label">Branch Name:</span>
+                            <span class="info-value">@(string.IsNullOrWhiteSpace(Model.BranchName) ? "-" : Model.BranchName)</span>
+                        </div>
+                        <div class="info-row-new">
+                            <span class="info-label">IFSC Code:</span>
+                            <span class="info-value">@(string.IsNullOrWhiteSpace(Model.IfscCode) ? "-" : Model.IfscCode)</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="info-card">
                     <h4>Other Details</h4>
-                    <div class="info-row">
-                        <span class="value">@Model.OtherDetails</span>
+                    <div class="info-row-new">
+                        <span class="info-value" style="grid-column: 1 / -1;">@(string.IsNullOrWhiteSpace(Model.OtherDetails) ? "-" : Model.OtherDetails)</span>
                     </div>
                 </div>
-            }
 
-            <div class="info-section metadata">
-                <p><small>Created: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small></p>
-                <p><small>Updated: @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></p>
+                <div class="metadata-card">
+                    <p><strong>Created:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Updated:</strong> @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
             </div>
         </div>
     </div>

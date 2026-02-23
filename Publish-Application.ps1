@@ -17,30 +17,30 @@ $ErrorActionPreference = "Stop"
 function Write-Header {
     param([string]$Message)
     Write-Host ""
-    Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║ $Message" -ForegroundColor Cyan
-    Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host "$Message" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor Cyan
+    Write-Host "[INFO] $Message" -ForegroundColor Cyan
 }
 
 function Write-Warning {
     param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
+    Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
 
 function Write-Error {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    Write-Host "[ERR] $Message" -ForegroundColor Red
 }
 
 # Main script
@@ -169,8 +169,8 @@ GitHub: https://github.com/abraham9486937737/Contact-Management-System
     Write-Info "Publish location: ContactManagementAPI\bin\Release\net8.0\$RuntimeIdentifier\publish\"
     Write-Info ""
     Write-Info "Next steps:"
-    Write-Info "1. Copy the entire 'publish' folder to distribution"
-    Write-Info "2. Users can extract and run by double-clicking 'Run.bat'"
+    Write-Info "1. Copy the entire publish folder to distribution"
+    Write-Info "2. Users can extract and run by double-clicking Run.bat"
     Write-Info "3. Or copy and run the EXE directly"
     Write-Info ""
     Write-Info "Optional: Create installer with Inno Setup"

@@ -6,13 +6,13 @@
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card shadow">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header" style="background: linear-gradient(135deg, #FF8C00 0%, #E67E00 100%); color: white; border: none;">
                     <h4 class="mb-0"><i class="fas fa-file-import"></i> Import Contacts</h4>
                 </div>
                 <div class="card-body">
                     @if (TempData["SuccessMessage"] != null)
                     {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <div>
                             @Html.Raw(TempData["SuccessMessage"])
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
@@ -20,44 +20,47 @@
 
                     @if (TempData["ErrorMessage"] != null)
                     {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; border-radius: 6px;">
                             @Html.Raw(TempData["ErrorMessage"])
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     }
 
-                    <div class="alert alert-info">
-                        <h5><i class="fas fa-info-circle"></i> Instructions:</h5>
-                        <ol>
-                            <li>Download the import template (Excel or CSV format)</li>
-                            <li>Fill in your contact details following the sample format</li>
-                            <li>Upload the completed file below</li>
-                            <li>Make sure required fields (FirstName or LastName) are filled</li>
-                        </ol>
+                    <div class="alert d-flex gap-3" style="background-color: #e7f3ff; border-color: #b6e0ff; color: #004085; border-radius: 6px; border-left: 4px solid #0EA5E9;">
+                        <span style="color: #0EA5E9; font-size: 1.3rem;"><i class="fas fa-info-circle"></i></span>
+                        <div>
+                            <h5 style="margin-top: 0; color: #0EA5E9;"><i class="fas fa-info-circle"></i> Instructions:</h5>
+                            <ol style="margin-bottom: 0;">
+                                <li>Download the import template (Excel or CSV format)</li>
+                                <li>Fill in your contact details following the sample format</li>
+                                <li>Upload the completed file below</li>
+                                <li>Make sure required fields (FirstName or LastName) are filled</li>
+                            </ol>
+                        </div>
                     </div>
 
                     <!-- Download Templates -->
                     <div class="mb-4">
-                        <h5><i class="fas fa-download"></i> Download Template:</h5>
-                        <div class="btn-group" role="group">
-                            <a href="@Url.Action("DownloadTemplate", new { type = "excel" })" class="btn btn-success">
+                        <h5 style="color: #003D82; margin-bottom: 1rem;"><i class="fas fa-download" style="color: #FF8C00;"></i> Download Template:</h5>
+                        <div class="btn-group" role="group" style="display: flex; gap: 1rem;">
+                            <a href="@Url.Action("DownloadTemplate", new { type = "excel" })" class="btn" style="background-color: #22c55e; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem;">
                                 <i class="fas fa-file-excel"></i> Download Excel Template
                             </a>
-                            <a href="@Url.Action("DownloadTemplate", new { type = "csv" })" class="btn btn-info">
+                            <a href="@Url.Action("DownloadTemplate", new { type = "csv" })" class="btn" style="background-color: #0EA5E9; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem;">
                                 <i class="fas fa-file-csv"></i> Download CSV Template
                             </a>
                         </div>
                     </div>
 
-                    <hr />
+                    <hr style="border-color: #e2e8f0;"/>
 
                     <!-- Import Form -->
                     <form asp-action="ImportFile" method="post" enctype="multipart/form-data" id="importForm">
                         @Html.AntiForgeryToken()
                         
                         <div class="mb-3">
-                            <label for="fileType" class="form-label"><strong>Select File Type:</strong></label>
-                            <select class="form-select" id="fileType" name="fileType" required>
+                            <label for="fileType" class="form-label" style="font-weight: 600; color: #003D82;"><strong>Select File Type:</strong></label>
+                            <select class="form-select" id="fileType" name="fileType" required style="border-color: #e2e8f0; border-radius: 6px; padding: 0.75rem;">
                                 <option value="">-- Choose File Type --</option>
                                 <option value="excel">Excel (.xlsx)</option>
                                 <option value="csv">CSV (.csv)</option>
@@ -65,22 +68,22 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="file" class="form-label"><strong>Select File to Import:</strong></label>
-                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv" required />
-                            <small class="form-text text-muted">Supported formats: .xlsx, .csv</small>
+                            <label for="file" class="form-label" style="font-weight: 600; color: #003D82;"><strong>Select File to Import:</strong></label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv" required style="border-color: #e2e8f0; border-radius: 6px; padding: 0.75rem;"/>
+                            <small class="form-text" style="color: #64748b;">Supported formats: .xlsx, .csv</small>
                         </div>
 
                         <div class="mb-3">
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Importing will add new contacts to your existing list. It will not update or replace existing contacts.
+                            <div class="alert" style="background-color: #fff3cd; border-color: #ffeaa7; color: #856404; border-radius: 6px; border-left: 4px solid #ff9800;">
+                                <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> <strong>Note:</strong> Importing will add new contacts to your existing list. It will not update or replace existing contacts.
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-between">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn" style="background-color: #FF8C00; color: white; border: none; border-radius: 6px; padding: 0.9rem 2rem; font-weight: 600; gap: 0.5rem;">
                                 <i class="fas fa-upload"></i> Import Contacts
                             </button>
-                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                            <a href="@Url.Action("Index")" class="btn" style="background-color: #6b7280; color: white; border: none; border-radius: 6px; padding: 0.9rem 2rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                                 <i class="fas fa-arrow-left"></i> Back to Contacts
                             </a>
                         </div>
@@ -90,105 +93,159 @@
 
             <!-- File Format Information -->
             <div class="card mt-4">
-                <div class="card-header bg-secondary text-white">
+                <div class="card-header" style="background: linear-gradient(135deg, #003D82 0%, #002954 100%); color: white; border: none; border-radius: 6px 6px 0 0;">
                     <h5 class="mb-0"><i class="fas fa-table"></i> Expected File Format</h5>
                 </div>
                 <div class="card-body">
-                    <p>Your import file should contain the following columns in order:</p>
+                    <p style="color: #64748b;">Your import file should contain the following columns in order:</p>
                     <div class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                            <thead class="table-light">
+                        <table class="table table-sm table-bordered" style="border-collapse: collapse;">
+                            <thead style="background-color: #f1f5f9; border-color: #e2e8f0;">
                                 <tr>
-                                    <th>#</th>
-                                    <th>Column Name</th>
-                                    <th>Required</th>
-                                    <th>Example</th>
+                                    <th style="border-color: #e2e8f0; color: #003D82; font-weight: 600;">#</th>
+                                    <th style="border-color: #e2e8f0; color: #003D82; font-weight: 600;">Column Name</th>
+                                    <th style="border-color: #e2e8f0; color: #003D82; font-weight: 600;">Required</th>
+                                    <th style="border-color: #e2e8f0; color: #003D82; font-weight: 600;">Example</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>1</td>
-                                    <td>FirstName</td>
-                                    <td><span class="badge bg-warning">Required*</span></td>
-                                    <td>John</td>
+                                    <td style="border-color: #e2e8f0;">1</td>
+                                    <td style="border-color: #e2e8f0;">FirstName</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #ff9800; color: white;">Required*</span></td>
+                                    <td style="border-color: #e2e8f0;">John</td>
                                 </tr>
                                 <tr>
-                                    <td>2</td>
-                                    <td>LastName</td>
-                                    <td><span class="badge bg-warning">Required*</span></td>
-                                    <td>Doe</td>
+                                    <td style="border-color: #e2e8f0;">2</td>
+                                    <td style="border-color: #e2e8f0;">LastName</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #ff9800; color: white;">Required*</span></td>
+                                    <td style="border-color: #e2e8f0;">Doe</td>
                                 </tr>
                                 <tr>
-                                    <td>3</td>
-                                    <td>NickName</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>Johnny</td>
+                                    <td style="border-color: #e2e8f0;">3</td>
+                                    <td style="border-color: #e2e8f0;">NickName</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">Johnny</td>
                                 </tr>
                                 <tr>
-                                    <td>4</td>
-                                    <td>Email</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>john.doe@example.com</td>
+                                    <td style="border-color: #e2e8f0;">4</td>
+                                    <td style="border-color: #e2e8f0;">Email</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">john.doe@example.com</td>
                                 </tr>
                                 <tr>
-                                    <td>5</td>
-                                    <td>Mobile1</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>+1234567890</td>
+                                    <td style="border-color: #e2e8f0;">5</td>
+                                    <td style="border-color: #e2e8f0;">Mobile1</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">+1234567890</td>
                                 </tr>
                                 <tr>
-                                    <td>6</td>
-                                    <td>Mobile2</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>+0987654321</td>
+                                    <td style="border-color: #e2e8f0;">6</td>
+                                    <td style="border-color: #e2e8f0;">Mobile2</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">+0987654321</td>
                                 </tr>
                                 <tr>
-                                    <td>7</td>
-                                    <td>Mobile3</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td></td>
+                                    <td style="border-color: #e2e8f0;">7</td>
+                                    <td style="border-color: #e2e8f0;">Mobile3</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;"></td>
                                 </tr>
                                 <tr>
-                                    <td>8</td>
-                                    <td>WhatsAppNumber</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>+1234567890</td>
+                                    <td style="border-color: #e2e8f0;">8</td>
+                                    <td style="border-color: #e2e8f0;">WhatsAppNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">+1234567890</td>
                                 </tr>
                                 <tr>
-                                    <td>9</td>
-                                    <td>Address</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>123 Main St</td>
+                                    <td style="border-color: #e2e8f0;">9</td>
+                                    <td style="border-color: #e2e8f0;">Address</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">123 Main St</td>
                                 </tr>
                                 <tr>
-                                    <td>10</td>
-                                    <td>City</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>New York</td>
+                                    <td style="border-color: #e2e8f0;">10</td>
+                                    <td style="border-color: #e2e8f0;">City</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">New York</td>
                                 </tr>
                                 <tr>
-                                    <td>11</td>
-                                    <td>State</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>NY</td>
+                                    <td style="border-color: #e2e8f0;">11</td>
+                                    <td style="border-color: #e2e8f0;">State</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">NY</td>
                                 </tr>
                                 <tr>
-                                    <td>12</td>
-                                    <td>PostalCode</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>10001</td>
+                                    <td style="border-color: #e2e8f0;">12</td>
+                                    <td style="border-color: #e2e8f0;">PostalCode</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">10001</td>
                                 </tr>
                                 <tr>
-                                    <td>13</td>
-                                    <td>Country</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>USA</td>
+                                    <td style="border-color: #e2e8f0;">13</td>
+                                    <td style="border-color: #e2e8f0;">Country</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">USA</td>
                                 </tr>
                                 <tr>
-                                    <td>14</td>
-                                    <td>OtherDetails</td>
-                                    <td><span class="badge bg-secondary">Optional</span></td>
-                                    <td>Sample contact</td>
+                                    <td style="border-color: #e2e8f0;">14</td>
+                                    <td style="border-color: #e2e8f0;">OtherDetails</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">Sample contact</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">15</td>
+                                    <td style="border-color: #e2e8f0;">PassportNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">P1234567</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">16</td>
+                                    <td style="border-color: #e2e8f0;">PanNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">ABCDE1234F</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">17</td>
+                                    <td style="border-color: #e2e8f0;">AadharNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">1234-5678-9012</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">18</td>
+                                    <td style="border-color: #e2e8f0;">DrivingLicenseNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">DL-12345-2020</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">19</td>
+                                    <td style="border-color: #e2e8f0;">VotersId</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">VOTER12345</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">20</td>
+                                    <td style="border-color: #e2e8f0;">BankAccountNumber</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">123456789012</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">21</td>
+                                    <td style="border-color: #e2e8f0;">BankName</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">State Bank</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">22</td>
+                                    <td style="border-color: #e2e8f0;">BranchName</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">Main Branch</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-color: #e2e8f0;">23</td>
+                                    <td style="border-color: #e2e8f0;">IfscCode</td>
+                                    <td style="border-color: #e2e8f0;"><span class="badge" style="background-color: #8b5cf6; color: white;">Optional</span></td>
+                                    <td style="border-color: #e2e8f0;">SBIN0001234</td>
                                 </tr>
                             </tbody>
                         </table>

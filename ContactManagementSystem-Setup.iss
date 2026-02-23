@@ -18,7 +18,6 @@ SolidCompression=yes
 PrivilegesRequired=lowest
 DisableDirPage=no
 DisableProgramGroupPage=no
-SetupIconFile=ContactManagementAPI\wwwroot\favicon.ico
 WizardStyle=modern
 MinVersion=10.0.17763
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -41,7 +40,7 @@ Name: "{autodesktop}\Contact Management System"; Filename: "{app}\ContactManagem
 
 [Run]
 ; Run application after installation
-Filename: "{app}\ContactManagementAPI.exe"; Description: "Launch Contact Management System"; Flags: nowait postinstall skipifsilent WorkingDir: "{app}"
+Filename: "{app}\ContactManagementAPI.exe"; Description: "Launch Contact Management System"; Flags: nowait postinstall skipifsilent; WorkingDir: "{app}"
 
 [UninstallDelete]
 ; Clean up application data on uninstall

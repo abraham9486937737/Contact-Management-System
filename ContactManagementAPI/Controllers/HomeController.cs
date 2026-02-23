@@ -4,6 +4,7 @@ using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Services;
 using ContactManagementAPI.Security;
+using System.Globalization;
 
 namespace ContactManagementAPI.Controllers
 {
@@ -56,6 +57,7 @@ namespace ContactManagementAPI.Controllers
                 .Include(c => c.Group)
                 .Include(c => c.Photos)
                 .Include(c => c.Documents)
+                .Include(c => c.BankAccounts)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (contact == null)
@@ -68,7 +70,7 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.ContactsCreate)]
         public IActionResult Create()
         {
-            ViewData["Groups"] = _context.ContactGroups.ToList();
+            PopulateFormData();
             return View();
         }
 
@@ -76,16 +78,32 @@ namespace ContactManagementAPI.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireRight(RightsCatalog.ContactsCreate)]
-        public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact, IFormFile? profilePhoto)
+        public async Task<IActionResult> Create([Bind("FirstName,LastName,NickName,Gender,DateOfBirth,Email,Mobile1,Mobile2,Mobile3,WhatsAppNumber,PassportNumber,PanNumber,AadharNumber,DrivingLicenseNumber,VotersId,Address,City,State,PostalCode,Country,GroupId,OtherDetails")] Contact contact, List<ContactBankAccount>? bankAccounts, IFormFile? profilePhoto)
         {
+            NormalizeOptionalBankAccountModelState();
+
             if (ModelState.IsValid)
             {
                 contact.CreatedAt = DateTime.Now;
                 contact.UpdatedAt = DateTime.Now;
+
+                var preparedBankAccounts = PrepareBankAccounts(bankAccounts);
+                SyncLegacyBankFields(contact, preparedBankAccounts.FirstOrDefault());
                 
                 // Save contact first to get the ID
                 _context.Add(contact);
                 await _context.SaveChangesAsync();
+
+                if (preparedBankAccounts.Any())
+                {
+                    foreach (var bankAccount in preparedBankAccounts)
+                    {
+                        bankAccount.ContactId = contact.Id;
+                    }
+
+                    _context.ContactBankAccounts.AddRange(preparedBankAccounts);
+                    await _context.SaveChangesAsync();
+                }
                 
                 // Handle profile photo upload after we have the contact ID
                 if (profilePhoto != null)
@@ -102,7 +120,7 @@ namespace ContactManagementAPI.Controllers
                 TempData["SuccessMessage"] = "Contact created successfully!";
                 return RedirectToAction(nameof(Details), new { id = contact.Id });
             }
-            ViewData["Groups"] = _context.ContactGroups.ToList();
+            PopulateFormData(contact, PrepareBankAccounts(bankAccounts));
             return View(contact);
         }
 
@@ -113,11 +131,13 @@ namespace ContactManagementAPI.Controllers
             if (id == null)
                 return NotFound();
 
-            var contact = await _context.Contacts.FindAsync(id);
+            var contact = await _context.Contacts
+                .Include(c => c.BankAccounts)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (contact == null)
                 return NotFound();
 
-            ViewData["Groups"] = _context.ContactGroups.ToList();
+            PopulateFormData(contact);
             return View(contact);
         }
 
@@ -125,37 +145,87 @@ namespace ContactManagementAPI.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireRight(RightsCatalog.ContactsEdit)]
-        public async Task<IActionResult> Edit(int id, Contact contact, IFormFile? profilePhoto)
+        public async Task<IActionResult> Edit(int id, List<ContactBankAccount>? bankAccounts, IFormFile? profilePhoto)
         {
-            if (id != contact.Id)
+            NormalizeOptionalBankAccountModelState();
+
+            var existingContact = await _context.Contacts
+                .AsTracking()
+                .Include(c => c.BankAccounts)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (existingContact == null)
                 return NotFound();
+
+            var updateSucceeded = await TryUpdateModelAsync(
+                existingContact,
+                "",
+                c => c.FirstName,
+                c => c.LastName,
+                c => c.NickName,
+                c => c.Gender,
+                c => c.DateOfBirth,
+                c => c.Email,
+                c => c.Mobile1,
+                c => c.Mobile2,
+                c => c.Mobile3,
+                c => c.WhatsAppNumber,
+                c => c.PassportNumber,
+                c => c.PanNumber,
+                c => c.AadharNumber,
+                c => c.DrivingLicenseNumber,
+                c => c.VotersId,
+                c => c.Address,
+                c => c.City,
+                c => c.State,
+                c => c.PostalCode,
+                c => c.Country,
+                c => c.GroupId,
+                c => c.OtherDetails);
+
+            if (!updateSucceeded)
+            {
+                PopulateFormData(existingContact, PrepareBankAccounts(bankAccounts));
+                return View(existingContact);
+            }
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Retrieve existing contact to preserve navigation properties
-                    var existingContact = await _context.Contacts.FindAsync(id);
-                    if (existingContact == null)
-                        return NotFound();
+                    var postedGender = Request.Form["Gender"].ToString();
+                    existingContact.Gender = string.IsNullOrWhiteSpace(postedGender) ? null : postedGender;
 
-                    // Update properties
-                    existingContact.FirstName = contact.FirstName;
-                    existingContact.LastName = contact.LastName;
-                    existingContact.NickName = contact.NickName;
-                    existingContact.Email = contact.Email;
-                    existingContact.Mobile1 = contact.Mobile1;
-                    existingContact.Mobile2 = contact.Mobile2;
-                    existingContact.Mobile3 = contact.Mobile3;
-                    existingContact.WhatsAppNumber = contact.WhatsAppNumber;
-                    existingContact.Address = contact.Address;
-                    existingContact.City = contact.City;
-                    existingContact.State = contact.State;
-                    existingContact.PostalCode = contact.PostalCode;
-                    existingContact.Country = contact.Country;
-                    existingContact.GroupId = contact.GroupId;
-                    existingContact.OtherDetails = contact.OtherDetails;
+                    var postedDateOfBirth = Request.Form["DateOfBirth"].ToString();
+                    if (string.IsNullOrWhiteSpace(postedDateOfBirth))
+                    {
+                        existingContact.DateOfBirth = null;
+                    }
+                    else if (DateTime.TryParseExact(postedDateOfBirth, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDateOfBirth) ||
+                             DateTime.TryParse(postedDateOfBirth, out parsedDateOfBirth))
+                    {
+                        existingContact.DateOfBirth = parsedDateOfBirth;
+                    }
+
                     existingContact.UpdatedAt = DateTime.Now;
+
+                    var preparedBankAccounts = PrepareBankAccounts(bankAccounts);
+                    if (existingContact.BankAccounts.Any())
+                    {
+                        _context.ContactBankAccounts.RemoveRange(existingContact.BankAccounts);
+                    }
+
+                    if (preparedBankAccounts.Any())
+                    {
+                        foreach (var bankAccount in preparedBankAccounts)
+                        {
+                            bankAccount.ContactId = existingContact.Id;
+                        }
+
+                        _context.ContactBankAccounts.AddRange(preparedBankAccounts);
+                    }
+
+                    SyncLegacyBankFields(existingContact, preparedBankAccounts.FirstOrDefault());
 
                     // Handle profile photo upload
                     if (profilePhoto != null)
@@ -178,13 +248,13 @@ namespace ContactManagementAPI.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ContactExists(contact.Id))
+                    if (!ContactExists(id))
                         return NotFound();
                     throw;
                 }
             }
-            ViewData["Groups"] = _context.ContactGroups.ToList();
-            return View(contact);
+            PopulateFormData(existingContact, PrepareBankAccounts(bankAccounts));
+            return View(existingContact);
         }
 
         // GET: Home/Delete/5
@@ -220,9 +290,141 @@ namespace ContactManagementAPI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Home/DeleteMultiple - Bulk delete contacts
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.ContactsDelete)]
+        public async Task<IActionResult> DeleteMultiple(List<int> contactIds)
+        {
+            if (contactIds == null || !contactIds.Any())
+            {
+                TempData["ErrorMessage"] = "No contacts selected for deletion.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var contactsToDelete = await _context.Contacts
+                    .Where(c => contactIds.Contains(c.Id))
+                    .ToListAsync();
+
+                if (contactsToDelete.Any())
+                {
+                    _context.Contacts.RemoveRange(contactsToDelete);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = $"Successfully deleted {contactsToDelete.Count} contact(s)!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No matching contacts found to delete.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting contacts: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
         private bool ContactExists(int id)
         {
             return _context.Contacts.Any(e => e.Id == id);
+        }
+
+        private void PopulateFormData(Contact? contact = null, List<ContactBankAccount>? bankAccounts = null)
+        {
+            ViewData["Groups"] = _context.ContactGroups.OrderBy(g => g.Name).ToList();
+
+            var bankNames = _context.ContactBankAccounts
+                .Where(b => !string.IsNullOrWhiteSpace(b.BankName))
+                .Select(b => b.BankName!)
+                .Distinct()
+                .OrderBy(name => name)
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(contact?.BankName) && !bankNames.Contains(contact.BankName))
+            {
+                bankNames.Add(contact.BankName);
+                bankNames = bankNames.OrderBy(name => name).ToList();
+            }
+
+            ViewData["BankNames"] = bankNames;
+
+            if (bankAccounts != null && bankAccounts.Any())
+            {
+                ViewData["BankAccounts"] = bankAccounts;
+                return;
+            }
+
+            if (contact?.BankAccounts != null && contact.BankAccounts.Any())
+            {
+                ViewData["BankAccounts"] = contact.BankAccounts.OrderBy(b => b.Id).ToList();
+                return;
+            }
+
+            if (contact != null && (!string.IsNullOrWhiteSpace(contact.BankAccountNumber) || !string.IsNullOrWhiteSpace(contact.BankName) || !string.IsNullOrWhiteSpace(contact.BranchName) || !string.IsNullOrWhiteSpace(contact.IfscCode)))
+            {
+                ViewData["BankAccounts"] = new List<ContactBankAccount>
+                {
+                    new ContactBankAccount
+                    {
+                        AccountNumber = contact.BankAccountNumber,
+                        BankName = contact.BankName,
+                        BranchName = contact.BranchName,
+                        IfscCode = contact.IfscCode
+                    }
+                };
+                return;
+            }
+
+            ViewData["BankAccounts"] = new List<ContactBankAccount> { new ContactBankAccount() };
+        }
+
+        private static List<ContactBankAccount> PrepareBankAccounts(List<ContactBankAccount>? bankAccounts)
+        {
+            return (bankAccounts ?? new List<ContactBankAccount>())
+                .Where(b => !string.IsNullOrWhiteSpace(b.AccountNumber) || !string.IsNullOrWhiteSpace(b.BankName) || !string.IsNullOrWhiteSpace(b.BranchName) || !string.IsNullOrWhiteSpace(b.IfscCode))
+                .Select(b => new ContactBankAccount
+                {
+                    AccountNumber = b.AccountNumber,
+                    BankName = b.BankName,
+                    BranchName = b.BranchName,
+                    IfscCode = b.IfscCode,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                })
+                .ToList();
+        }
+
+        private static void SyncLegacyBankFields(Contact contact, ContactBankAccount? primaryBankAccount)
+        {
+            if (primaryBankAccount == null)
+            {
+                contact.BankAccountNumber = null;
+                contact.BankName = null;
+                contact.BranchName = null;
+                contact.IfscCode = null;
+                return;
+            }
+
+            contact.BankAccountNumber = primaryBankAccount.AccountNumber;
+            contact.BankName = primaryBankAccount.BankName;
+            contact.BranchName = primaryBankAccount.BranchName;
+            contact.IfscCode = primaryBankAccount.IfscCode;
+        }
+
+        private void NormalizeOptionalBankAccountModelState()
+        {
+            var bankAccountKeys = ModelState.Keys
+                .Where(key => key.StartsWith("bankAccounts[", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var key in bankAccountKeys)
+            {
+                ModelState.Remove(key);
+            }
         }
 
         #region Import/Export Actions

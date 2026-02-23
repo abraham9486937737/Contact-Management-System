@@ -14,6 +14,7 @@ namespace ContactManagementAPI.Data
         public DbSet<ContactGroup> ContactGroups { get; set; }
         public DbSet<ContactPhoto> ContactPhotos { get; set; }
         public DbSet<ContactDocument> ContactDocuments { get; set; }
+        public DbSet<ContactBankAccount> ContactBankAccounts { get; set; }
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<UserGroup> UserGroups { get; set; }
         public DbSet<GroupRight> GroupRights { get; set; }
@@ -42,6 +43,12 @@ namespace ContactManagementAPI.Data
                 .HasOne(cd => cd.Contact)
                 .WithMany(c => c.Documents)
                 .HasForeignKey(cd => cd.ContactId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ContactBankAccount>()
+                .HasOne(cb => cb.Contact)
+                .WithMany(c => c.BankAccounts)
+                .HasForeignKey(cb => cb.ContactId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // AppUser - UserGroup relationship
@@ -88,7 +95,9 @@ namespace ContactManagementAPI.Data
                 new ContactGroup { Id = 3, Name = "Business", Description = "Business contacts", CreatedAt = DateTime.Now },
                 new ContactGroup { Id = 4, Name = "School", Description = "School contacts", CreatedAt = DateTime.Now },
                 new ContactGroup { Id = 5, Name = "Church", Description = "Church members", CreatedAt = DateTime.Now },
-                new ContactGroup { Id = 6, Name = "Others", Description = "Other contacts", CreatedAt = DateTime.Now }
+                new ContactGroup { Id = 6, Name = "Others", Description = "Other contacts", CreatedAt = DateTime.Now },
+                new ContactGroup { Id = 7, Name = "College", Description = "College contacts", CreatedAt = DateTime.Now },
+                new ContactGroup { Id = 8, Name = "AA", Description = "Alcoholics Anonymous", CreatedAt = DateTime.Now }
             );
         }
     }

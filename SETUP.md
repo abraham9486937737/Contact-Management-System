@@ -1,5 +1,33 @@
 # Setup Guide
 
+## One-Click Install (Recommended)
+
+If you are on Windows and want the fastest setup:
+
+1. Open the project root folder.
+2. Double-click `Install_And_Run.bat`
+3. Wait for installation to complete.
+4. The app starts automatically at http://localhost:5000
+
+What this installer does automatically:
+- Uses the pre-published app package only if it is up-to-date; otherwise builds from current source
+- Sets SQL Server instance to `.\SQLEXPRESS` by default
+- Installs to `%LOCALAPPDATA%\ContactManagementSystem`
+- Creates desktop shortcut: **Contact Management System**
+- Creates launcher: `%LOCALAPPDATA%\ContactManagementSystem\Run-ContactManagementSystem.bat`
+
+If your SQL Server instance is not `.\SQLEXPRESS`, run this in PowerShell from project root:
+
+```powershell
+.\Setup-Local-Install.ps1 -SqlServerInstance ".\YOUR_INSTANCE"
+```
+
+To always force a fresh build from source:
+
+```powershell
+.\Setup-Local-Install.ps1 -SourceMode Build
+```
+
 ## Quick Start
 
 This guide will help you get the Contact Management System up and running on your Windows machine.

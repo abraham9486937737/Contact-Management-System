@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Contact Management System - Manage your contacts efficiently">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Contacts">
+    <title>Login - Contact Management System</title>
+    <link rel="stylesheet" href="/css/style.v2.css?v=639072065269867478" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+</head>
+<body>
+    <!-- Top Info Bar -->
+    <div class="top-info-bar">
+        <div class="info-section">
+            <i class="fas fa-envelope"></i>
+            <span class="info-text"><strong>Email:</strong> abrahamcbe@gmail.com</span>
+        </div>
+        <div class="info-section">
+            <i class="fas fa-phone"></i>
+            <span class="info-text"><strong>Phone:</strong> +91 94869 37737</span>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <h1><i class="fas fa-home"></i> <span class="brand-text">Contact Management System</span></h1>
+                </a>
+            </div>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="navbar-links" id="navbarLinks">
+                <div class="nav-auth">
+                        <a href="/account/login" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Login</span></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <div class="main-container">
+        
+<div class="form-container" style="max-width: 520px; margin: 40px auto;">
+    <h2><i class="fas fa-sign-in-alt"></i> Sign In</h2>
+
+    <form method="post" action="/Account/Login">
+        
+        <input type="hidden" id="ReturnUrl" name="ReturnUrl" value="/home/edit/6" />
+
+        <div class="form-group">
+            <label for="UserName">UserName</label>
+            <input class="form-control" type="text" data-val="true" data-val-maxlength="The field UserName must be a string or array type with a maximum length of &#x27;100&#x27;." data-val-maxlength-max="100" data-val-required="The UserName field is required." id="UserName" maxlength="100" name="UserName" value="" />
+            <span class="text-danger field-validation-valid" data-valmsg-for="UserName" data-valmsg-replace="true"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="Password">Password</label>
+            <input class="form-control" type="password" data-val="true" data-val-required="The Password field is required." id="Password" name="Password" />
+            <span class="text-danger field-validation-valid" data-valmsg-for="Password" data-valmsg-replace="true"></span>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-lock"></i> Login
+            </button>
+        </div>
+
+    <input name="__RequestVerificationToken" type="hidden" value="CfDJ8Ep1Qmn_b4tBlpOPTYmHPP7oYB3YgqxJolYsGxg-697i7GssMgXFaulgu_EOwUHqxJ3GKqRwD1xGJmV2a9gfmT-JHNY12srIC58vyrk66mQSmhpYAELyeGizjL1Ac_9iwT7ZiaIVRMb-uvC8N3rX0j8" /></form>
+</div>
+
+
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Contact Management System. All rights reserved.</p>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    
+    <!-- Validation scripts partial view -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/additional-methods.min.js"></script>
+
+
+</body>
+</html>
+

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Services;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,12 +34,47 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
-// Configure SQL Server Database Connection
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+// Configure database connection (SQLite preferred for portable installs)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+var useSqlite = connectionString.TrimStart().StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase);
+
+if (useSqlite)
+{
+    var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
+    var dataSource = sqliteBuilder.DataSource;
+
+    if (string.IsNullOrWhiteSpace(dataSource))
+    {
+        dataSource = "ContactManagement.db";
+    }
+
+    if (!Path.IsPathRooted(dataSource))
+    {
+        var appDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ContactManagementSystem");
+
+        Directory.CreateDirectory(appDataFolder);
+        dataSource = Path.Combine(appDataFolder, dataSource);
+    }
+
+    sqliteBuilder.DataSource = dataSource;
+    connectionString = sqliteBuilder.ToString();
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(connectionString);
+    if (useSqlite)
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer(connectionString);
+    }
+
     // Optimize EF Core for better memory management
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     options.EnableSensitiveDataLogging(false);
@@ -66,11 +102,20 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply migrations automatically
+// Ensure database exists and seed defaults
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+
+    if (useSqlite)
+    {
+        dbContext.Database.EnsureCreated();
+    }
+    else
+    {
+        dbContext.Database.Migrate();
+    }
+
     SeedData.Initialize(dbContext);
 }
 

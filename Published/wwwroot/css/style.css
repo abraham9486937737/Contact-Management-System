@@ -439,9 +439,17 @@ body {
 }
 
 .table thead th {
-    background: var(--light-bg);
-    font-weight: 600;
+    /* Make table header prominent and readable */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    font-weight: 700;
+    border-bottom: 2px solid rgba(0,0,0,0.06);
 }
+
+/* Zebra striping for table rows */
+.table tbody tr:nth-of-type(odd) td { background-color: #f3f7fb; }
+.table tbody tr:nth-of-type(even) td { background-color: #ffffff; }
+.table tbody tr:hover td { background-color: #eef4ff; }
 
 .form-group {
     margin-bottom: 16px;

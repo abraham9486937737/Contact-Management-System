@@ -51,17 +51,28 @@ namespace ContactManagementAPI.Services
                             FirstName = worksheet.Cells[row, 1].Value?.ToString() ?? "",
                             LastName = worksheet.Cells[row, 2].Value?.ToString() ?? "",
                             NickName = worksheet.Cells[row, 3].Value?.ToString(),
-                            Email = worksheet.Cells[row, 4].Value?.ToString(),
-                            Mobile1 = worksheet.Cells[row, 5].Value?.ToString(),
-                            Mobile2 = worksheet.Cells[row, 6].Value?.ToString(),
-                            Mobile3 = worksheet.Cells[row, 7].Value?.ToString(),
-                            WhatsAppNumber = worksheet.Cells[row, 8].Value?.ToString(),
-                            Address = worksheet.Cells[row, 9].Value?.ToString(),
-                            City = worksheet.Cells[row, 10].Value?.ToString(),
-                            State = worksheet.Cells[row, 11].Value?.ToString(),
-                            PostalCode = worksheet.Cells[row, 12].Value?.ToString(),
-                            Country = worksheet.Cells[row, 13].Value?.ToString(),
-                            OtherDetails = worksheet.Cells[row, 14].Value?.ToString(),
+                            Gender = worksheet.Cells[row, 4].Value?.ToString(),
+                            DateOfBirth = DateTime.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out var dob) ? dob : null,
+                            Email = worksheet.Cells[row, 6].Value?.ToString(),
+                            Mobile1 = worksheet.Cells[row, 7].Value?.ToString(),
+                            Mobile2 = worksheet.Cells[row, 8].Value?.ToString(),
+                            Mobile3 = worksheet.Cells[row, 9].Value?.ToString(),
+                            WhatsAppNumber = worksheet.Cells[row, 10].Value?.ToString(),
+                            PassportNumber = worksheet.Cells[row, 11].Value?.ToString(),
+                            PanNumber = worksheet.Cells[row, 12].Value?.ToString(),
+                            AadharNumber = worksheet.Cells[row, 13].Value?.ToString(),
+                            DrivingLicenseNumber = worksheet.Cells[row, 14].Value?.ToString(),
+                            VotersId = worksheet.Cells[row, 15].Value?.ToString(),
+                            BankAccountNumber = worksheet.Cells[row, 16].Value?.ToString(),
+                            BankName = worksheet.Cells[row, 17].Value?.ToString(),
+                            BranchName = worksheet.Cells[row, 18].Value?.ToString(),
+                            IfscCode = worksheet.Cells[row, 19].Value?.ToString(),
+                            Address = worksheet.Cells[row, 20].Value?.ToString(),
+                            City = worksheet.Cells[row, 21].Value?.ToString(),
+                            State = worksheet.Cells[row, 22].Value?.ToString(),
+                            PostalCode = worksheet.Cells[row, 23].Value?.ToString(),
+                            Country = worksheet.Cells[row, 24].Value?.ToString(),
+                            OtherDetails = worksheet.Cells[row, 25].Value?.ToString(),
                             CreatedAt = DateTime.Now,
                             UpdatedAt = DateTime.Now
                         };
@@ -111,22 +122,44 @@ namespace ContactManagementAPI.Services
                     rowNumber++;
                     try
                     {
+                        string? ReadField(string name, int index)
+                        {
+                            if (csv.TryGetField<string>(name, out var namedValue))
+                                return namedValue;
+
+                            if (csv.TryGetField<string>(index, out var indexedValue))
+                                return indexedValue;
+
+                            return null;
+                        }
+
                         var contact = new Contact
                         {
-                            FirstName = csv.GetField<string>("FirstName") ?? csv.GetField<string>(0) ?? "",
-                            LastName = csv.GetField<string>("LastName") ?? csv.GetField<string>(1) ?? "",
-                            NickName = csv.GetField<string>("NickName") ?? csv.GetField<string>(2),
-                            Email = csv.GetField<string>("Email") ?? csv.GetField<string>(3),
-                            Mobile1 = csv.GetField<string>("Mobile1") ?? csv.GetField<string>(4),
-                            Mobile2 = csv.GetField<string>("Mobile2") ?? csv.GetField<string>(5),
-                            Mobile3 = csv.GetField<string>("Mobile3") ?? csv.GetField<string>(6),
-                            WhatsAppNumber = csv.GetField<string>("WhatsAppNumber") ?? csv.GetField<string>(7),
-                            Address = csv.GetField<string>("Address") ?? csv.GetField<string>(8),
-                            City = csv.GetField<string>("City") ?? csv.GetField<string>(9),
-                            State = csv.GetField<string>("State") ?? csv.GetField<string>(10),
-                            PostalCode = csv.GetField<string>("PostalCode") ?? csv.GetField<string>(11),
-                            Country = csv.GetField<string>("Country") ?? csv.GetField<string>(12),
-                            OtherDetails = csv.GetField<string>("OtherDetails") ?? csv.GetField<string>(13),
+                            FirstName = ReadField("FirstName", 0) ?? "",
+                            LastName = ReadField("LastName", 1) ?? "",
+                            NickName = ReadField("NickName", 2),
+                            Gender = ReadField("Gender", 3),
+                            DateOfBirth = DateTime.TryParse(ReadField("DateOfBirth", 4), out var dob) ? dob : null,
+                            Email = ReadField("Email", 5),
+                            Mobile1 = ReadField("Mobile1", 6),
+                            Mobile2 = ReadField("Mobile2", 7),
+                            Mobile3 = ReadField("Mobile3", 8),
+                            WhatsAppNumber = ReadField("WhatsAppNumber", 9),
+                            PassportNumber = ReadField("PassportNumber", 10),
+                            PanNumber = ReadField("PanNumber", 11),
+                            AadharNumber = ReadField("AadharNumber", 12),
+                            DrivingLicenseNumber = ReadField("DrivingLicenseNumber", 13),
+                            VotersId = ReadField("VotersId", 14),
+                            BankAccountNumber = ReadField("BankAccountNumber", 15),
+                            BankName = ReadField("BankName", 16),
+                            BranchName = ReadField("BranchName", 17),
+                            IfscCode = ReadField("IfscCode", 18),
+                            Address = ReadField("Address", 19),
+                            City = ReadField("City", 20),
+                            State = ReadField("State", 21),
+                            PostalCode = ReadField("PostalCode", 22),
+                            Country = ReadField("Country", 23),
+                            OtherDetails = ReadField("OtherDetails", 24),
                             CreatedAt = DateTime.Now,
                             UpdatedAt = DateTime.Now
                         };
@@ -163,22 +196,33 @@ namespace ContactManagementAPI.Services
             worksheet.Cells[1, 1].Value = "First Name";
             worksheet.Cells[1, 2].Value = "Last Name";
             worksheet.Cells[1, 3].Value = "Nick Name";
-            worksheet.Cells[1, 4].Value = "Email";
-            worksheet.Cells[1, 5].Value = "Mobile 1";
-            worksheet.Cells[1, 6].Value = "Mobile 2";
-            worksheet.Cells[1, 7].Value = "Mobile 3";
-            worksheet.Cells[1, 8].Value = "WhatsApp";
-            worksheet.Cells[1, 9].Value = "Address";
-            worksheet.Cells[1, 10].Value = "City";
-            worksheet.Cells[1, 11].Value = "State";
-            worksheet.Cells[1, 12].Value = "Postal Code";
-            worksheet.Cells[1, 13].Value = "Country";
-            worksheet.Cells[1, 14].Value = "Other Details";
-            worksheet.Cells[1, 15].Value = "Group";
-            worksheet.Cells[1, 16].Value = "Created At";
+            worksheet.Cells[1, 4].Value = "Gender";
+            worksheet.Cells[1, 5].Value = "Date Of Birth";
+            worksheet.Cells[1, 6].Value = "Email";
+            worksheet.Cells[1, 7].Value = "Mobile 1";
+            worksheet.Cells[1, 8].Value = "Mobile 2";
+            worksheet.Cells[1, 9].Value = "Mobile 3";
+            worksheet.Cells[1, 10].Value = "WhatsApp";
+            worksheet.Cells[1, 11].Value = "Passport Number";
+            worksheet.Cells[1, 12].Value = "PAN Number";
+            worksheet.Cells[1, 13].Value = "Aadhar Number";
+            worksheet.Cells[1, 14].Value = "Driving License Number";
+            worksheet.Cells[1, 15].Value = "Voters ID";
+            worksheet.Cells[1, 16].Value = "Bank Account Number";
+            worksheet.Cells[1, 17].Value = "Bank Name";
+            worksheet.Cells[1, 18].Value = "Branch Name";
+            worksheet.Cells[1, 19].Value = "IFSC Code";
+            worksheet.Cells[1, 20].Value = "Address";
+            worksheet.Cells[1, 21].Value = "City";
+            worksheet.Cells[1, 22].Value = "State";
+            worksheet.Cells[1, 23].Value = "Postal Code";
+            worksheet.Cells[1, 24].Value = "Country";
+            worksheet.Cells[1, 25].Value = "Other Details";
+            worksheet.Cells[1, 26].Value = "Group";
+            worksheet.Cells[1, 27].Value = "Created At";
 
             // Style headers
-            using (var range = worksheet.Cells[1, 1, 1, 16])
+            using (var range = worksheet.Cells[1, 1, 1, 27])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -194,19 +238,30 @@ namespace ContactManagementAPI.Services
                 worksheet.Cells[row, 1].Value = contact.FirstName;
                 worksheet.Cells[row, 2].Value = contact.LastName;
                 worksheet.Cells[row, 3].Value = contact.NickName;
-                worksheet.Cells[row, 4].Value = contact.Email;
-                worksheet.Cells[row, 5].Value = contact.Mobile1;
-                worksheet.Cells[row, 6].Value = contact.Mobile2;
-                worksheet.Cells[row, 7].Value = contact.Mobile3;
-                worksheet.Cells[row, 8].Value = contact.WhatsAppNumber;
-                worksheet.Cells[row, 9].Value = contact.Address;
-                worksheet.Cells[row, 10].Value = contact.City;
-                worksheet.Cells[row, 11].Value = contact.State;
-                worksheet.Cells[row, 12].Value = contact.PostalCode;
-                worksheet.Cells[row, 13].Value = contact.Country;
-                worksheet.Cells[row, 14].Value = contact.OtherDetails;
-                worksheet.Cells[row, 15].Value = contact.Group?.Name;
-                worksheet.Cells[row, 16].Value = contact.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss");
+                worksheet.Cells[row, 4].Value = contact.Gender;
+                worksheet.Cells[row, 5].Value = contact.DateOfBirth?.ToString("yyyy-MM-dd");
+                worksheet.Cells[row, 6].Value = contact.Email;
+                worksheet.Cells[row, 7].Value = contact.Mobile1;
+                worksheet.Cells[row, 8].Value = contact.Mobile2;
+                worksheet.Cells[row, 9].Value = contact.Mobile3;
+                worksheet.Cells[row, 10].Value = contact.WhatsAppNumber;
+                worksheet.Cells[row, 11].Value = contact.PassportNumber;
+                worksheet.Cells[row, 12].Value = contact.PanNumber;
+                worksheet.Cells[row, 13].Value = contact.AadharNumber;
+                worksheet.Cells[row, 14].Value = contact.DrivingLicenseNumber;
+                worksheet.Cells[row, 15].Value = contact.VotersId;
+                worksheet.Cells[row, 16].Value = contact.BankAccountNumber;
+                worksheet.Cells[row, 17].Value = contact.BankName;
+                worksheet.Cells[row, 18].Value = contact.BranchName;
+                worksheet.Cells[row, 19].Value = contact.IfscCode;
+                worksheet.Cells[row, 20].Value = contact.Address;
+                worksheet.Cells[row, 21].Value = contact.City;
+                worksheet.Cells[row, 22].Value = contact.State;
+                worksheet.Cells[row, 23].Value = contact.PostalCode;
+                worksheet.Cells[row, 24].Value = contact.Country;
+                worksheet.Cells[row, 25].Value = contact.OtherDetails;
+                worksheet.Cells[row, 26].Value = contact.Group?.Name;
+                worksheet.Cells[row, 27].Value = contact.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss");
             }
 
             // Auto-fit columns
@@ -225,11 +280,22 @@ namespace ContactManagementAPI.Services
             csv.WriteField("FirstName");
             csv.WriteField("LastName");
             csv.WriteField("NickName");
+            csv.WriteField("Gender");
+            csv.WriteField("DateOfBirth");
             csv.WriteField("Email");
             csv.WriteField("Mobile1");
             csv.WriteField("Mobile2");
             csv.WriteField("Mobile3");
             csv.WriteField("WhatsAppNumber");
+            csv.WriteField("PassportNumber");
+            csv.WriteField("PanNumber");
+            csv.WriteField("AadharNumber");
+            csv.WriteField("DrivingLicenseNumber");
+            csv.WriteField("VotersId");
+            csv.WriteField("BankAccountNumber");
+            csv.WriteField("BankName");
+            csv.WriteField("BranchName");
+            csv.WriteField("IfscCode");
             csv.WriteField("Address");
             csv.WriteField("City");
             csv.WriteField("State");
@@ -246,11 +312,22 @@ namespace ContactManagementAPI.Services
                 csv.WriteField(contact.FirstName);
                 csv.WriteField(contact.LastName);
                 csv.WriteField(contact.NickName);
+                csv.WriteField(contact.Gender);
+                csv.WriteField(contact.DateOfBirth?.ToString("yyyy-MM-dd"));
                 csv.WriteField(contact.Email);
                 csv.WriteField(contact.Mobile1);
                 csv.WriteField(contact.Mobile2);
                 csv.WriteField(contact.Mobile3);
                 csv.WriteField(contact.WhatsAppNumber);
+                csv.WriteField(contact.PassportNumber);
+                csv.WriteField(contact.PanNumber);
+                csv.WriteField(contact.AadharNumber);
+                csv.WriteField(contact.DrivingLicenseNumber);
+                csv.WriteField(contact.VotersId);
+                csv.WriteField(contact.BankAccountNumber);
+                csv.WriteField(contact.BankName);
+                csv.WriteField(contact.BranchName);
+                csv.WriteField(contact.IfscCode);
                 csv.WriteField(contact.Address);
                 csv.WriteField(contact.City);
                 csv.WriteField(contact.State);
@@ -361,20 +438,31 @@ namespace ContactManagementAPI.Services
             worksheet.Cells[1, 1].Value = "FirstName";
             worksheet.Cells[1, 2].Value = "LastName";
             worksheet.Cells[1, 3].Value = "NickName";
-            worksheet.Cells[1, 4].Value = "Email";
-            worksheet.Cells[1, 5].Value = "Mobile1";
-            worksheet.Cells[1, 6].Value = "Mobile2";
-            worksheet.Cells[1, 7].Value = "Mobile3";
-            worksheet.Cells[1, 8].Value = "WhatsAppNumber";
-            worksheet.Cells[1, 9].Value = "Address";
-            worksheet.Cells[1, 10].Value = "City";
-            worksheet.Cells[1, 11].Value = "State";
-            worksheet.Cells[1, 12].Value = "PostalCode";
-            worksheet.Cells[1, 13].Value = "Country";
-            worksheet.Cells[1, 14].Value = "OtherDetails";
+            worksheet.Cells[1, 4].Value = "Gender";
+            worksheet.Cells[1, 5].Value = "DateOfBirth";
+            worksheet.Cells[1, 6].Value = "Email";
+            worksheet.Cells[1, 7].Value = "Mobile1";
+            worksheet.Cells[1, 8].Value = "Mobile2";
+            worksheet.Cells[1, 9].Value = "Mobile3";
+            worksheet.Cells[1, 10].Value = "WhatsAppNumber";
+            worksheet.Cells[1, 11].Value = "PassportNumber";
+            worksheet.Cells[1, 12].Value = "PanNumber";
+            worksheet.Cells[1, 13].Value = "AadharNumber";
+            worksheet.Cells[1, 14].Value = "DrivingLicenseNumber";
+            worksheet.Cells[1, 15].Value = "VotersId";
+            worksheet.Cells[1, 16].Value = "BankAccountNumber";
+            worksheet.Cells[1, 17].Value = "BankName";
+            worksheet.Cells[1, 18].Value = "BranchName";
+            worksheet.Cells[1, 19].Value = "IfscCode";
+            worksheet.Cells[1, 20].Value = "Address";
+            worksheet.Cells[1, 21].Value = "City";
+            worksheet.Cells[1, 22].Value = "State";
+            worksheet.Cells[1, 23].Value = "PostalCode";
+            worksheet.Cells[1, 24].Value = "Country";
+            worksheet.Cells[1, 25].Value = "OtherDetails";
 
             // Style headers
-            using (var range = worksheet.Cells[1, 1, 1, 14])
+            using (var range = worksheet.Cells[1, 1, 1, 25])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -385,17 +473,28 @@ namespace ContactManagementAPI.Services
             worksheet.Cells[2, 1].Value = "John";
             worksheet.Cells[2, 2].Value = "Doe";
             worksheet.Cells[2, 3].Value = "Johnny";
-            worksheet.Cells[2, 4].Value = "john.doe@example.com";
-            worksheet.Cells[2, 5].Value = "+1234567890";
-            worksheet.Cells[2, 6].Value = "+0987654321";
-            worksheet.Cells[2, 7].Value = "";
-            worksheet.Cells[2, 8].Value = "+1234567890";
-            worksheet.Cells[2, 9].Value = "123 Main St";
-            worksheet.Cells[2, 10].Value = "New York";
-            worksheet.Cells[2, 11].Value = "NY";
-            worksheet.Cells[2, 12].Value = "10001";
-            worksheet.Cells[2, 13].Value = "USA";
-            worksheet.Cells[2, 14].Value = "Sample contact";
+            worksheet.Cells[2, 4].Value = "Male";
+            worksheet.Cells[2, 5].Value = "1990-01-01";
+            worksheet.Cells[2, 6].Value = "john.doe@example.com";
+            worksheet.Cells[2, 7].Value = "+1234567890";
+            worksheet.Cells[2, 8].Value = "+0987654321";
+            worksheet.Cells[2, 9].Value = "";
+            worksheet.Cells[2, 10].Value = "+1234567890";
+            worksheet.Cells[2, 11].Value = "P1234567";
+            worksheet.Cells[2, 12].Value = "ABCDE1234F";
+            worksheet.Cells[2, 13].Value = "1234-5678-9012";
+            worksheet.Cells[2, 14].Value = "DL-12345-2020";
+            worksheet.Cells[2, 15].Value = "VOTER12345";
+            worksheet.Cells[2, 16].Value = "123456789012";
+            worksheet.Cells[2, 17].Value = "State Bank";
+            worksheet.Cells[2, 18].Value = "Main Branch";
+            worksheet.Cells[2, 19].Value = "SBIN0001234";
+            worksheet.Cells[2, 20].Value = "123 Main St";
+            worksheet.Cells[2, 21].Value = "New York";
+            worksheet.Cells[2, 22].Value = "NY";
+            worksheet.Cells[2, 23].Value = "10001";
+            worksheet.Cells[2, 24].Value = "USA";
+            worksheet.Cells[2, 25].Value = "Sample contact";
 
             // Auto-fit columns
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
@@ -413,11 +512,22 @@ namespace ContactManagementAPI.Services
             csv.WriteField("FirstName");
             csv.WriteField("LastName");
             csv.WriteField("NickName");
+            csv.WriteField("Gender");
+            csv.WriteField("DateOfBirth");
             csv.WriteField("Email");
             csv.WriteField("Mobile1");
             csv.WriteField("Mobile2");
             csv.WriteField("Mobile3");
             csv.WriteField("WhatsAppNumber");
+            csv.WriteField("PassportNumber");
+            csv.WriteField("PanNumber");
+            csv.WriteField("AadharNumber");
+            csv.WriteField("DrivingLicenseNumber");
+            csv.WriteField("VotersId");
+            csv.WriteField("BankAccountNumber");
+            csv.WriteField("BankName");
+            csv.WriteField("BranchName");
+            csv.WriteField("IfscCode");
             csv.WriteField("Address");
             csv.WriteField("City");
             csv.WriteField("State");
@@ -430,11 +540,22 @@ namespace ContactManagementAPI.Services
             csv.WriteField("John");
             csv.WriteField("Doe");
             csv.WriteField("Johnny");
+            csv.WriteField("Male");
+            csv.WriteField("1990-01-01");
             csv.WriteField("john.doe@example.com");
             csv.WriteField("+1234567890");
             csv.WriteField("+0987654321");
             csv.WriteField("");
             csv.WriteField("+1234567890");
+            csv.WriteField("P1234567");
+            csv.WriteField("ABCDE1234F");
+            csv.WriteField("1234-5678-9012");
+            csv.WriteField("DL-12345-2020");
+            csv.WriteField("VOTER12345");
+            csv.WriteField("123456789012");
+            csv.WriteField("State Bank");
+            csv.WriteField("Main Branch");
+            csv.WriteField("SBIN0001234");
             csv.WriteField("123 Main St");
             csv.WriteField("New York");
             csv.WriteField("NY");

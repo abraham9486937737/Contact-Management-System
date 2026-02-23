@@ -1,15 +1,28 @@
 @inject ContactManagementAPI.Services.UserContextService UserContext
 @model IEnumerable<ContactManagementAPI.Models.Contact>
+@using System.Linq
 @{
     ViewData["Title"] = "All Contacts";
     var searchTerm = ViewBag.SearchTerm ?? "";
+
+    // Default ordering: by Name ascending (FirstName then LastName)
+    var sortedModel = Model.OrderBy(c => ((c.FirstName ?? "").Trim() + " " + (c.LastName ?? "").Trim()).Trim());
 }
+
+@Html.AntiForgeryToken()
 
 <div class="contacts-container">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;">
             <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" style="padding: 15px; margin-bottom: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; color: #721c24;">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
         </div>
     }
     
@@ -74,7 +87,7 @@
         }
     </div>
 
-    @if (Model.Count() == 0)
+    @if (!sortedModel.Any())
     {
         <div class="no-contacts">
             <i class="fas fa-inbox"></i>
@@ -88,66 +101,339 @@
     }
     else
     {
-        <div class="contacts-grid">
-            @foreach (var contact in Model)
-            {
-                <div class="contact-card">
-                    <div class="contact-photo">
-                        @if (!string.IsNullOrEmpty(contact.PhotoPath))
-                        {
-                            <img src="@contact.PhotoPath" alt="@contact.FirstName @contact.LastName" />
-                        }
-                        else
-                        {
-                            <div class="photo-placeholder">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        }
-                    </div>
-                    <div class="contact-info">
-                        <h3>@contact.FirstName @contact.LastName</h3>
-                        @if (!string.IsNullOrEmpty(contact.NickName))
-                        {
-                            <p class="nickname">(@contact.NickName)</p>
-                        }
-                        @if (contact.Group != null)
-                        {
-                            <span class="badge badge-group">@contact.Group.Name</span>
-                        }
-                        <div class="contact-details">
-                            @if (!string.IsNullOrEmpty(contact.Email))
-                            {
-                                <p><i class="fas fa-envelope"></i> <a href="mailto:@contact.Email">@contact.Email</a></p>
-                            }
-                            @if (!string.IsNullOrEmpty(contact.Mobile1))
-                            {
-                                <p><i class="fas fa-phone"></i> @contact.Mobile1</p>
-                            }
-                            @if (!string.IsNullOrEmpty(contact.WhatsAppNumber))
-                            {
-                                <p><i class="fab fa-whatsapp"></i> @contact.WhatsAppNumber</p>
-                            }
-                        </div>
-                    </div>
-                    <div class="contact-actions">
-                        <a href="/home/details/@contact.Id" class="btn btn-sm btn-info">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
-                        {
-                            <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                        }
+        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+        {
+            <div class="bulk-actions" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;" id="bulkActionsBar">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <span id="selectedCount" style="font-weight: 600; color: #495057;">
+                        <i class="fas fa-check-square"></i> <span id="countText">0</span> selected
+                    </span>
+                    <button type="button" class="btn btn-danger" id="deleteSelectedBtn">
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+            </div>
+        }
+
+        <style>
+            /* Contacts grid styling: header, zebra rows and hover (use high specificity to override Bootstrap) */
+            .contacts-table thead th {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: #ffffff !important;
+                border-bottom: 2px solid rgba(0,0,0,0.06) !important;
+            }
+            .contacts-table thead th .form-check-input { transform: scale(1.05); margin-top: 0; }
+
+            .contacts-table tbody tr:nth-of-type(odd) td { background-color: #f3f7fb !important; color: #212529 !important; }
+            .contacts-table tbody tr:nth-of-type(even) td { background-color: #ffffff !important; color: #212529 !important; }
+            .contacts-table tbody tr:hover td { background-color: #eef4ff !important; color: #212529 !important; }
+            .contacts-table th, .contacts-table td { vertical-align: middle; }
+        </style>
+
+        <style>
+            /* Responsive: hide table on small, show cards instead */
+            @@media (max-width: 767.98px) {
+                .contacts-table-wrapper { display: none !important; }
+                .contacts-cards { display: block !important; }
+            }
+            @@media (min-width: 768px) {
+                .contacts-cards { display: none !important; }
+            }
+        </style>
+
+        <div class="contacts-table-wrapper">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped contacts-table" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <tr>
                         @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
                         {
-                            <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger">
-                                <i class="fas fa-trash"></i> Delete
-                            </a>
+                            <th style="width: 50px; text-align: center;">
+                                <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" title="Select All">
+                            </th>
                         }
+                        <th style="width: 60px;">Photo</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>WhatsApp</th>
+                        <th>City</th>
+                        <th>Group</th>
+                        <th style="width: 180px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var contactsList = sortedModel.ToList(); }
+                    @for (var __i = 0; __i < contactsList.Count; __i++)
+                    {
+                        var contact = contactsList[__i];
+                        var _rowBg = (__i % 2 == 0) ? "#f3f7fb" : "#ffffff";
+                    
+                        <tr style="background-color:@_rowBg;">
+                            @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                            {
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <input type="checkbox" class="contact-checkbox form-check-input" data-contact-id="@contact.Id" style="cursor: pointer;">
+                                </td>
+                            }
+                            <td style="vertical-align: middle;">
+                                @if (!string.IsNullOrEmpty(contact.PhotoPath))
+                                {
+                                    <img src="@contact.PhotoPath" alt="@contact.FirstName @contact.LastName" 
+                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #dee2e6;" />
+                                }
+                                else
+                                {
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                        @contact.FirstName?.Substring(0, 1)@contact.LastName?.Substring(0, 1)
+                                    </div>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <strong>@contact.FirstName @contact.LastName</strong>
+                                @if (!string.IsNullOrEmpty(contact.NickName))
+                                {
+                                    <br/><small class="text-muted">(@contact.NickName)</small>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                @if (!string.IsNullOrEmpty(contact.Email))
+                                {
+                                    <a href="mailto:@contact.Email" style="text-decoration: none;">
+                                        <i class="fas fa-envelope text-primary"></i> @contact.Email
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                @if (!string.IsNullOrEmpty(contact.Mobile1))
+                                {
+                                    <i class="fas fa-phone text-success"></i> @contact.Mobile1
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                @if (!string.IsNullOrEmpty(contact.WhatsAppNumber))
+                                {
+                                    <a href="https://wa.me/@contact.WhatsAppNumber.Replace("+", "").Replace("-", "").Replace(" ", "")" 
+                                       target="_blank" style="text-decoration: none;">
+                                        <i class="fab fa-whatsapp text-success"></i> @contact.WhatsAppNumber
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                @if (!string.IsNullOrEmpty(contact.City))
+                                {
+                                    <i class="fas fa-map-marker-alt text-danger"></i> @contact.City
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td style="vertical-align: middle;">
+                                @if (contact.Group != null)
+                                {
+                                    <span class="badge bg-info">@contact.Group.Name</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Unassigned</span>
+                                }
+                            </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div class="btn-group" role="group">
+                                    <a href="/home/details/@contact.Id" class="btn btn-sm btn-info" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
+                                    {
+                                        <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    }
+                                    @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                                    {
+                                        <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- Mobile / Tablet: card view (visible on small screens) -->
+        <div class="contacts-cards" style="display:none;">
+            @foreach (var contact in sortedModel)
+            {
+                <div class="card mb-2">
+                    <div class="card-body d-flex align-items-center" style="gap:12px;">
+                        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                        {
+                            <div style="flex: 0 0 auto;">
+                                <input type="checkbox" class="contact-checkbox form-check-input" data-contact-id="@contact.Id" style="cursor: pointer;" />
+                            </div>
+                        }
+
+                        <div style="flex: 0 0 auto;">
+                            @if (!string.IsNullOrEmpty(contact.PhotoPath))
+                            {
+                                <img src="@contact.PhotoPath" alt="@contact.FirstName @contact.LastName" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;" />
+                            }
+                            else
+                            {
+                                <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
+                                    @contact.FirstName?.Substring(0,1)@contact.LastName?.Substring(0,1)
+                                </div>
+                            }
+                        </div>
+
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                @contact.FirstName @contact.LastName
+                            </div>
+                            <div style="font-size:13px; color:#6c757d;">
+                                @if (!string.IsNullOrEmpty(contact.Email)) { <span>@contact.Email</span> }
+                                else if (!string.IsNullOrEmpty(contact.Mobile1)) { <span>@contact.Mobile1</span> }
+                            </div>
+                        </div>
+
+                        <div style="flex:0 0 auto; display:flex; gap:6px;">
+                            <a href="/home/details/@contact.Id" class="btn btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
+                            @if (UserContext.HasRight(RightsCatalog.ContactsEdit))
+                            {
+                                <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                            }
+                            @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                            {
+                                <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></a>
+                            }
+                        </div>
                     </div>
                 </div>
             }
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const bulkActionsBar = document.getElementById('bulkActionsBar');
+            const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+            const countText = document.getElementById('countText');
+
+            // Helper to get the current set of contact checkboxes (live)
+            function getContactCheckboxes() {
+                return document.querySelectorAll('.contact-checkbox');
+            }
+
+            // Select All functionality (use live query so we always act on current DOM)
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checked = this.checked;
+                    const boxes = getContactCheckboxes();
+                    boxes.forEach(checkbox => {
+                        checkbox.checked = checked;
+                    });
+                    // ensure indeterminate cleared when user toggles header
+                    this.indeterminate = false;
+                    updateBulkActionsBar();
+                });
+            }
+
+            // Use event delegation for individual checkbox changes (reliable for dynamic content)
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('contact-checkbox')) {
+                    updateSelectAllState();
+                    updateBulkActionsBar();
+                }
+            });
+
+            // Update Select All checkbox state
+            function updateSelectAllState() {
+                if (!selectAllCheckbox) return;
+
+                const totalCheckboxes = getContactCheckboxes().length;
+                const checkedCheckboxes = document.querySelectorAll('.contact-checkbox:checked').length;
+
+                selectAllCheckbox.checked = (totalCheckboxes > 0) && (totalCheckboxes === checkedCheckboxes);
+                selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+            }
+
+            // Update bulk actions bar visibility
+            function updateBulkActionsBar() {
+                const checkedCount = document.querySelectorAll('.contact-checkbox:checked').length;
+
+                if (checkedCount > 0) {
+                    if (bulkActionsBar) bulkActionsBar.style.display = 'block';
+                    if (countText) countText.textContent = checkedCount;
+                } else {
+                    if (bulkActionsBar) bulkActionsBar.style.display = 'none';
+                }
+                // keep header checkbox state in sync after updating UI
+                updateSelectAllState();
+            }
+
+            // Delete selected contacts
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.addEventListener('click', function() {
+                    const selectedIds = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
+                        .map(checkbox => checkbox.getAttribute('data-contact-id'));
+                    
+                    if (selectedIds.length === 0) {
+                        alert('Please select at least one contact to delete.');
+                        return;
+                    }
+
+                    const confirmMessage = `Are you sure you want to delete ${selectedIds.length} contact(s)?\n\nThis action cannot be undone!`;
+                    
+                    if (confirm(confirmMessage)) {
+                        // Create form and submit
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/home/deletemultiple';
+                        
+                        // Add anti-forgery token
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                        if (token) {
+                            const tokenInput = document.createElement('input');
+                            tokenInput.type = 'hidden';
+                            tokenInput.name = '__RequestVerificationToken';
+                            tokenInput.value = token.value;
+                            form.appendChild(tokenInput);
+                        }
+                        
+                        // Add contact IDs
+                        selectedIds.forEach(id => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'contactIds';
+                            input.value = id;
+                            form.appendChild(input);
+                        });
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            }
+        });
+    </script>
+}
