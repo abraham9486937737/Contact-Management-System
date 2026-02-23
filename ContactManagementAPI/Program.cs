@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Services;
 using Microsoft.Data.Sqlite;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +44,13 @@ var useSqlite = connectionString.TrimStart().StartsWith("Data Source=", StringCo
 if (useSqlite)
 {
     var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
+    var sqliteDbPathOverride = Environment.GetEnvironmentVariable("SQLITE_DB_PATH");
     var dataSource = sqliteBuilder.DataSource;
+
+    if (!string.IsNullOrWhiteSpace(sqliteDbPathOverride))
+    {
+        dataSource = sqliteDbPathOverride;
+    }
 
     if (string.IsNullOrWhiteSpace(dataSource))
     {
@@ -102,6 +109,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Support reverse proxies/load balancers in cloud hosting
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+var disableHttpsRedirection =
+    app.Configuration.GetValue<bool>("DisableHttpsRedirection") ||
+    string.Equals(Environment.GetEnvironmentVariable("DISABLE_HTTPS_REDIRECTION"), "true", StringComparison.OrdinalIgnoreCase);
+
 // Ensure database exists and seed defaults
 using (var scope = app.Services.CreateScope())
 {
@@ -126,7 +143,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!disableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
