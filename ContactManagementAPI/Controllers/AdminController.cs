@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.IO.Compression;
+using Microsoft.Data.Sqlite;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using ContactManagementAPI.Security;
@@ -16,13 +18,15 @@ namespace ContactManagementAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserContextService _userContextService;
         private readonly AdminHistoryService _adminHistoryService;
+        private readonly IWebHostEnvironment _environment;
         private readonly PasswordHasher<AppUser> _passwordHasher = new();
 
-        public AdminController(ApplicationDbContext context, UserContextService userContextService, AdminHistoryService adminHistoryService)
+        public AdminController(ApplicationDbContext context, UserContextService userContextService, AdminHistoryService adminHistoryService, IWebHostEnvironment environment)
         {
             _context = context;
             _userContextService = userContextService;
             _adminHistoryService = adminHistoryService;
+            _environment = environment;
         }
 
         private static bool IsSuperAdminUser(AppUser? user)
@@ -53,6 +57,29 @@ namespace ContactManagementAPI.Controllers
             }
 
             return _context.ContactGroups.FirstOrDefault(cg => cg.Id == userGroup.Id);
+        }
+
+        private string GetUploadsRoot()
+        {
+            var uploadsRoot = Environment.GetEnvironmentVariable("UPLOADS_ROOT");
+            if (!string.IsNullOrWhiteSpace(uploadsRoot))
+            {
+                Directory.CreateDirectory(uploadsRoot);
+                Directory.CreateDirectory(Path.Combine(uploadsRoot, "photos"));
+                Directory.CreateDirectory(Path.Combine(uploadsRoot, "documents"));
+                return uploadsRoot;
+            }
+
+            var fallback = Path.Combine(_environment.WebRootPath, "uploads");
+            Directory.CreateDirectory(fallback);
+            Directory.CreateDirectory(Path.Combine(fallback, "photos"));
+            Directory.CreateDirectory(Path.Combine(fallback, "documents"));
+            return fallback;
+        }
+
+        private static string NormalizeText(string? value)
+        {
+            return (value ?? string.Empty).Trim().ToUpperInvariant();
         }
 
         [RequireRight(RightsCatalog.AdminManageUsers)]
@@ -730,6 +757,415 @@ namespace ContactManagementAPI.Controllers
             };
 
             return View(model);
+        }
+
+        [RequireRight(RightsCatalog.AdminManageUsers)]
+        public IActionResult RestoreContacts()
+        {
+            var currentUser = _userContextService.CurrentUser;
+            if (!IsSuperAdminUser(currentUser))
+            {
+                return Forbid();
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.AdminManageUsers)]
+        public async Task<IActionResult> RestoreContacts(IFormFile backupZip)
+        {
+            var currentUser = _userContextService.CurrentUser;
+            if (!IsSuperAdminUser(currentUser))
+            {
+                return Forbid();
+            }
+
+            if (backupZip == null || backupZip.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please select a backup ZIP file.";
+                return RedirectToAction(nameof(RestoreContacts));
+            }
+
+            var tempRoot = Path.Combine(Path.GetTempPath(), "cms-restore-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempRoot);
+
+            try
+            {
+                var zipPath = Path.Combine(tempRoot, "backup.zip");
+                await using (var fs = System.IO.File.Create(zipPath))
+                {
+                    await backupZip.CopyToAsync(fs);
+                }
+
+                ZipFile.ExtractToDirectory(zipPath, tempRoot);
+
+                // Expect: ContactManagement.db + uploads/photos + uploads/documents
+                var backupDbPath = Directory.GetFiles(tempRoot, "ContactManagement.db", SearchOption.AllDirectories)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(backupDbPath) || !System.IO.File.Exists(backupDbPath))
+                {
+                    TempData["ErrorMessage"] = "Backup ZIP must contain ContactManagement.db";
+                    return RedirectToAction(nameof(RestoreContacts));
+                }
+
+                var backupUploadsRoot = Directory.GetDirectories(tempRoot, "uploads", SearchOption.AllDirectories)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(backupUploadsRoot) || !Directory.Exists(backupUploadsRoot))
+                {
+                    TempData["ErrorMessage"] = "Backup ZIP must contain uploads/photos and uploads/documents.";
+                    return RedirectToAction(nameof(RestoreContacts));
+                }
+
+                var targetUploadsRoot = GetUploadsRoot();
+
+                var backupConnString = new SqliteConnectionStringBuilder { DataSource = backupDbPath }.ToString();
+                await using var backupConn = new SqliteConnection(backupConnString);
+                await backupConn.OpenAsync();
+
+                var wantedNames = new[] { "ABRAHAM", "PREMA", "PONNURAJ" };
+                var contactsToRestore = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>();
+
+                var contactCmd = backupConn.CreateCommand();
+                contactCmd.CommandText = @"
+SELECT Id, FirstName, LastName, NickName, Gender, DateOfBirth, Email,
+       Mobile1, Mobile2, Mobile3, WhatsAppNumber,
+       PassportNumber, PanNumber, AadharNumber, DrivingLicenseNumber, VotersId,
+       BankAccountNumber, BankName, BranchName, IfscCode,
+       Address, City, State, PostalCode, Country,
+       PhotoPath, GroupId, OtherDetails, CreatedAt, UpdatedAt
+FROM Contacts
+WHERE lower(FirstName) IN ('abraham','prema','ponnuraj');";
+
+                await using (var reader = await contactCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var dict = new System.Collections.Generic.Dictionary<string, object?>();
+                        for (var i = 0; i < reader.FieldCount; i++)
+                        {
+                            dict[reader.GetName(i)] = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
+                        }
+                        contactsToRestore.Add(dict);
+                    }
+                }
+
+                if (contactsToRestore.Count == 0)
+                {
+                    TempData["ErrorMessage"] = "No Abraham/Prema/Ponnuraj contacts were found in the backup DB.";
+                    return RedirectToAction(nameof(RestoreContacts));
+                }
+
+                // Pull related rows from backup
+                var backupContactIds = contactsToRestore.Select(c => Convert.ToInt32(c["Id"])).ToArray();
+                var idList = string.Join(",", backupContactIds);
+
+                var backupPhotos = new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>>();
+                var photoCmd = backupConn.CreateCommand();
+                photoCmd.CommandText = $@"
+SELECT ContactId, PhotoPath, FileName, FileSize, ContentType, IsProfilePhoto, UploadedAt
+FROM ContactPhotos
+WHERE ContactId IN ({idList});";
+                await using (var reader = await photoCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var contactId = reader.GetInt32(0);
+                        if (!backupPhotos.TryGetValue(contactId, out var list))
+                        {
+                            list = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>();
+                            backupPhotos[contactId] = list;
+                        }
+
+                        list.Add(new System.Collections.Generic.Dictionary<string, object?>
+                        {
+                            ["PhotoPath"] = reader.IsDBNull(1) ? null : reader.GetString(1),
+                            ["FileName"] = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            ["FileSize"] = reader.IsDBNull(3) ? 0L : reader.GetInt64(3),
+                            ["ContentType"] = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            ["IsProfilePhoto"] = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                            ["UploadedAt"] = reader.IsDBNull(6) ? (DateTime?)null : reader.GetDateTime(6)
+                        });
+                    }
+                }
+
+                var backupDocs = new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>>();
+                var docCmd = backupConn.CreateCommand();
+                docCmd.CommandText = $@"
+SELECT ContactId, DocumentPath, FileName, FileSize, ContentType, DocumentType, UploadedAt
+FROM ContactDocuments
+WHERE ContactId IN ({idList});";
+                await using (var reader = await docCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var contactId = reader.GetInt32(0);
+                        if (!backupDocs.TryGetValue(contactId, out var list))
+                        {
+                            list = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>();
+                            backupDocs[contactId] = list;
+                        }
+
+                        list.Add(new System.Collections.Generic.Dictionary<string, object?>
+                        {
+                            ["DocumentPath"] = reader.IsDBNull(1) ? null : reader.GetString(1),
+                            ["FileName"] = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            ["FileSize"] = reader.IsDBNull(3) ? 0L : reader.GetInt64(3),
+                            ["ContentType"] = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            ["DocumentType"] = reader.IsDBNull(5) ? null : reader.GetString(5),
+                            ["UploadedAt"] = reader.IsDBNull(6) ? (DateTime?)null : reader.GetDateTime(6)
+                        });
+                    }
+                }
+
+                var backupBanks = new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>>();
+                var bankCmd = backupConn.CreateCommand();
+                bankCmd.CommandText = $@"
+SELECT ContactId, AccountNumber, BankName, BranchName, IfscCode, CreatedAt, UpdatedAt
+FROM ContactBankAccounts
+WHERE ContactId IN ({idList});";
+                await using (var reader = await bankCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var contactId = reader.GetInt32(0);
+                        if (!backupBanks.TryGetValue(contactId, out var list))
+                        {
+                            list = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object?>>();
+                            backupBanks[contactId] = list;
+                        }
+
+                        list.Add(new System.Collections.Generic.Dictionary<string, object?>
+                        {
+                            ["AccountNumber"] = reader.IsDBNull(1) ? null : reader.GetString(1),
+                            ["BankName"] = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            ["BranchName"] = reader.IsDBNull(3) ? null : reader.GetString(3),
+                            ["IfscCode"] = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            ["CreatedAt"] = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5),
+                            ["UpdatedAt"] = reader.IsDBNull(6) ? (DateTime?)null : reader.GetDateTime(6)
+                        });
+                    }
+                }
+
+                // Merge into current DB
+                _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+
+                var restoredCount = 0;
+                var copiedFiles = 0;
+
+                foreach (var backupContact in contactsToRestore)
+                {
+                    var firstName = backupContact["FirstName"]?.ToString() ?? string.Empty;
+                    var lastName = backupContact["LastName"]?.ToString();
+                    var nickName = backupContact["NickName"]?.ToString();
+
+                    var normalizedFirstName = NormalizeText(firstName);
+                    if (!wantedNames.Contains(normalizedFirstName))
+                    {
+                        continue;
+                    }
+
+                    var normalizedLastName = NormalizeText(lastName);
+                    var normalizedNickName = NormalizeText(nickName);
+
+                    var existing = _context.Contacts
+                        .Include(c => c.Photos)
+                        .Include(c => c.Documents)
+                        .Include(c => c.BankAccounts)
+                        .FirstOrDefault(c =>
+                            NormalizeText(c.FirstName) == normalizedFirstName &&
+                            NormalizeText(c.LastName) == normalizedLastName &&
+                            NormalizeText(c.NickName) == normalizedNickName);
+
+                    if (existing == null)
+                    {
+                        existing = new Contact();
+                        _context.Contacts.Add(existing);
+                    }
+
+                    // Copy scalar fields
+                    existing.FirstName = firstName;
+                    existing.LastName = lastName;
+                    existing.NickName = nickName;
+                    existing.Gender = backupContact["Gender"]?.ToString();
+                    existing.DateOfBirth = backupContact["DateOfBirth"] as DateTime?;
+                    existing.Email = backupContact["Email"]?.ToString();
+                    existing.Mobile1 = backupContact["Mobile1"]?.ToString();
+                    existing.Mobile2 = backupContact["Mobile2"]?.ToString();
+                    existing.Mobile3 = backupContact["Mobile3"]?.ToString();
+                    existing.WhatsAppNumber = backupContact["WhatsAppNumber"]?.ToString();
+                    existing.PassportNumber = backupContact["PassportNumber"]?.ToString();
+                    existing.PanNumber = backupContact["PanNumber"]?.ToString();
+                    existing.AadharNumber = backupContact["AadharNumber"]?.ToString();
+                    existing.DrivingLicenseNumber = backupContact["DrivingLicenseNumber"]?.ToString();
+                    existing.VotersId = backupContact["VotersId"]?.ToString();
+                    existing.BankAccountNumber = backupContact["BankAccountNumber"]?.ToString();
+                    existing.BankName = backupContact["BankName"]?.ToString();
+                    existing.BranchName = backupContact["BranchName"]?.ToString();
+                    existing.IfscCode = backupContact["IfscCode"]?.ToString();
+                    existing.Address = backupContact["Address"]?.ToString();
+                    existing.City = backupContact["City"]?.ToString();
+                    existing.State = backupContact["State"]?.ToString();
+                    existing.PostalCode = backupContact["PostalCode"]?.ToString();
+                    existing.Country = backupContact["Country"]?.ToString();
+                    existing.PhotoPath = backupContact["PhotoPath"]?.ToString();
+                    existing.GroupId = backupContact["GroupId"] as int?;
+                    existing.OtherDetails = backupContact["OtherDetails"]?.ToString();
+
+                    existing.CreatedAt = backupContact["CreatedAt"] as DateTime? ?? existing.CreatedAt;
+                    existing.UpdatedAt = DateTime.Now;
+
+                    await _context.SaveChangesAsync();
+
+                    // Replace related data
+                    if (existing.Photos.Any())
+                    {
+                        _context.ContactPhotos.RemoveRange(existing.Photos);
+                    }
+                    if (existing.Documents.Any())
+                    {
+                        _context.ContactDocuments.RemoveRange(existing.Documents);
+                    }
+                    if (existing.BankAccounts.Any())
+                    {
+                        _context.ContactBankAccounts.RemoveRange(existing.BankAccounts);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    var sourceId = Convert.ToInt32(backupContact["Id"]);
+
+                    if (backupPhotos.TryGetValue(sourceId, out var photos))
+                    {
+                        foreach (var row in photos)
+                        {
+                            var photoPath = row["PhotoPath"]?.ToString();
+                            if (!string.IsNullOrWhiteSpace(photoPath))
+                            {
+                                CopyBackupFile(backupUploadsRoot, targetUploadsRoot, photoPath, ref copiedFiles);
+                            }
+
+                            _context.ContactPhotos.Add(new ContactPhoto
+                            {
+                                ContactId = existing.Id,
+                                PhotoPath = photoPath ?? string.Empty,
+                                FileName = row["FileName"]?.ToString() ?? string.Empty,
+                                FileSize = row["FileSize"] is long l ? l : 0L,
+                                ContentType = row["ContentType"]?.ToString() ?? "application/octet-stream",
+                                IsProfilePhoto = row["IsProfilePhoto"] is bool b && b,
+                                UploadedAt = row["UploadedAt"] as DateTime? ?? DateTime.Now
+                            });
+                        }
+                    }
+
+                    if (backupDocs.TryGetValue(sourceId, out var docs))
+                    {
+                        foreach (var row in docs)
+                        {
+                            var docPath = row["DocumentPath"]?.ToString();
+                            if (!string.IsNullOrWhiteSpace(docPath))
+                            {
+                                CopyBackupFile(backupUploadsRoot, targetUploadsRoot, docPath, ref copiedFiles);
+                            }
+
+                            _context.ContactDocuments.Add(new ContactDocument
+                            {
+                                ContactId = existing.Id,
+                                DocumentPath = docPath ?? string.Empty,
+                                FileName = row["FileName"]?.ToString() ?? string.Empty,
+                                FileSize = row["FileSize"] is long l ? l : 0L,
+                                ContentType = row["ContentType"]?.ToString() ?? "application/octet-stream",
+                                DocumentType = row["DocumentType"]?.ToString() ?? "Other",
+                                UploadedAt = row["UploadedAt"] as DateTime? ?? DateTime.Now
+                            });
+                        }
+                    }
+
+                    if (backupBanks.TryGetValue(sourceId, out var banks))
+                    {
+                        foreach (var row in banks)
+                        {
+                            _context.ContactBankAccounts.Add(new ContactBankAccount
+                            {
+                                ContactId = existing.Id,
+                                AccountNumber = row["AccountNumber"]?.ToString(),
+                                BankName = row["BankName"]?.ToString(),
+                                BranchName = row["BranchName"]?.ToString(),
+                                IfscCode = row["IfscCode"]?.ToString(),
+                                CreatedAt = row["CreatedAt"] as DateTime? ?? DateTime.Now,
+                                UpdatedAt = row["UpdatedAt"] as DateTime? ?? DateTime.Now
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    restoredCount++;
+                }
+
+                _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                _adminHistoryService.Log(
+                    actionType: "Restore",
+                    entityType: "Contacts",
+                    entityId: 0,
+                    performedBy: currentUser?.UserName ?? "Unknown",
+                    details: $"Restored {restoredCount} key contacts from backup (copied {copiedFiles} files)."
+                );
+
+                TempData["SuccessMessage"] = $"Restored {restoredCount} contact(s) and copied {copiedFiles} file(s).";
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Restore failed: {ex.Message}";
+                return RedirectToAction(nameof(RestoreContacts));
+            }
+            finally
+            {
+                try
+                {
+                    if (Directory.Exists(tempRoot))
+                    {
+                        Directory.Delete(tempRoot, recursive: true);
+                    }
+                }
+                catch
+                {
+                    // ignore cleanup issues
+                }
+            }
+
+            static void CopyBackupFile(string backupUploadsRoot, string targetUploadsRoot, string webPath, ref int copiedFiles)
+            {
+                var normalized = webPath.Trim();
+                if (normalized.StartsWith("/") == false)
+                {
+                    normalized = "/" + normalized;
+                }
+
+                if (!normalized.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                var relative = normalized.Substring("/uploads/".Length).Replace('/', Path.DirectorySeparatorChar);
+                var source = Path.Combine(backupUploadsRoot, relative);
+                var dest = Path.Combine(targetUploadsRoot, relative);
+
+                var destDir = Path.GetDirectoryName(dest);
+                if (!string.IsNullOrWhiteSpace(destDir))
+                {
+                    Directory.CreateDirectory(destDir);
+                }
+
+                if (System.IO.File.Exists(source))
+                {
+                    System.IO.File.Copy(source, dest, overwrite: true);
+                    copiedFiles++;
+                }
+            }
         }
     }
 }
