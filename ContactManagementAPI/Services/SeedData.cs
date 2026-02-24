@@ -104,6 +104,89 @@ namespace ContactManagementAPI.Services
             EnsureSuperAdminUser(context, hasher);
 
             EnsureContactGroupUsers(context, hasher);
+
+            EnsureInitialContacts(context);
+        }
+
+        private static void EnsureInitialContacts(ApplicationDbContext context)
+        {
+            if (context.Contacts.Any())
+            {
+                return;
+            }
+
+            var now = DateTime.Now;
+
+            var familyGroupId = context.ContactGroups
+                .Where(g => g.Name == "Family")
+                .Select(g => (int?)g.Id)
+                .FirstOrDefault();
+
+            var seedContacts = new[]
+            {
+                new Contact
+                {
+                    FirstName = "Abraham",
+                    LastName = "CBE",
+                    NickName = "Abraham",
+                    Mobile1 = "9000000001",
+                    GroupId = familyGroupId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
+                },
+                new Contact
+                {
+                    FirstName = "Prema",
+                    LastName = "",
+                    NickName = "Prema",
+                    Mobile1 = "9000000002",
+                    GroupId = familyGroupId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
+                },
+                new Contact
+                {
+                    FirstName = "Ponnuraj",
+                    LastName = "",
+                    NickName = "Ponnuraj",
+                    Mobile1 = "9000000003",
+                    GroupId = familyGroupId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
+                }
+            };
+
+            context.Contacts.AddRange(seedContacts);
+            context.SaveChanges();
+
+            // Add one test contact per contact group (to help validate group scoping after a fresh DB)
+            var contactGroups = context.ContactGroups
+                .OrderBy(g => g.Id)
+                .ToList();
+
+            var counter = 10;
+            foreach (var group in contactGroups)
+            {
+                var testContact = new Contact
+                {
+                    FirstName = $"{group.Name} Test",
+                    LastName = "Contact",
+                    NickName = $"{group.Name}",
+                    Mobile1 = $"90000000{counter:D2}",
+                    GroupId = group.Id,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    OtherDetails = "Seeded test contact for group validation."
+                };
+
+                context.Contacts.Add(testContact);
+                counter++;
+            }
+
+            context.SaveChanges();
         }
 
         private static void EnsureSuperAdminUser(ApplicationDbContext context, PasswordHasher<AppUser> hasher)

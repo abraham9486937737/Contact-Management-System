@@ -18,6 +18,18 @@ namespace ContactManagementAPI.Services
             _configuration = configuration;
         }
 
+        private string GetUploadsRoot()
+        {
+            var uploadsRoot = Environment.GetEnvironmentVariable("UPLOADS_ROOT");
+            if (!string.IsNullOrWhiteSpace(uploadsRoot))
+            {
+                Directory.CreateDirectory(uploadsRoot);
+                return uploadsRoot;
+            }
+
+            return Path.Combine(_environment.WebRootPath, "uploads");
+        }
+
         public async Task<(bool Success, string FilePath, string ErrorMessage)> UploadPhotoAsync(IFormFile file, int contactId)
         {
             try
@@ -34,7 +46,7 @@ namespace ContactManagementAPI.Services
                 if (!allowedExtensions.Contains(fileExtension))
                     return (false, "", "Invalid file format. Allowed formats: JPG, PNG, GIF, BMP");
 
-                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "photos");
+                var uploadPath = Path.Combine(GetUploadsRoot(), "photos");
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
@@ -70,7 +82,7 @@ namespace ContactManagementAPI.Services
                 if (!allowedExtensions.Contains(fileExtension))
                     return (false, "", "Invalid file format");
 
-                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "documents");
+                var uploadPath = Path.Combine(GetUploadsRoot(), "documents");
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
@@ -94,7 +106,26 @@ namespace ContactManagementAPI.Services
         {
             try
             {
-                var fullPath = Path.Combine(_environment.WebRootPath, filePath.TrimStart('/'));
+                var trimmed = (filePath ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(trimmed))
+                {
+                    return false;
+                }
+
+                var normalized = trimmed.StartsWith("/") ? trimmed : "/" + trimmed;
+                var uploadsRoot = GetUploadsRoot();
+                string fullPath;
+
+                if (normalized.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                {
+                    var relative = normalized.Substring("/uploads/".Length).Replace('/', Path.DirectorySeparatorChar);
+                    fullPath = Path.Combine(uploadsRoot, relative);
+                }
+                else
+                {
+                    fullPath = Path.Combine(_environment.WebRootPath, normalized.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                }
+
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);

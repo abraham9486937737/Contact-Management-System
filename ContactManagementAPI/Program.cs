@@ -3,6 +3,7 @@ using ContactManagementAPI.Data;
 using ContactManagementAPI.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -150,6 +151,20 @@ if (!disableHttpsRedirection)
 }
 
 app.UseStaticFiles();
+
+var uploadsRoot = Environment.GetEnvironmentVariable("UPLOADS_ROOT");
+if (!string.IsNullOrWhiteSpace(uploadsRoot) && Directory.Exists(uploadsRoot))
+{
+    Directory.CreateDirectory(Path.Combine(uploadsRoot, "photos"));
+    Directory.CreateDirectory(Path.Combine(uploadsRoot, "documents"));
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsRoot),
+        RequestPath = "/uploads"
+    });
+}
+
 app.UseRouting();
 app.UseSession();
 app.UseCors("AllowAll");

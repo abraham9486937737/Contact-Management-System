@@ -16,4 +16,10 @@ EXPOSE 7860
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV DISABLE_HTTPS_REDIRECTION=true
 
+# Persist data across redeploys (requires HF Space persistent storage enabled)
+ENV SQLITE_DB_PATH=/data/ContactManagement.db
+ENV UPLOADS_ROOT=/data/uploads
+
+RUN mkdir -p /data /data/uploads /data/uploads/photos /data/uploads/documents
+
 ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=${ASPNETCORE_URLS:-http://0.0.0.0:${PORT:-7860}} dotnet ContactManagementAPI.dll"]
