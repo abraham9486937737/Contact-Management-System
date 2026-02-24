@@ -2,6 +2,7 @@ using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace ContactManagementAPI.Services
 {
@@ -45,5 +46,14 @@ namespace ContactManagementAPI.Services
         }
 
         public bool IsAdmin => UserId.HasValue && _authorizationService.IsAdmin(UserId.Value);
+
+        public bool IsSuperAdmin
+        {
+            get
+            {
+                var user = CurrentUser;
+                return user != null && string.Equals(user.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase);
+            }
+        }
     }
 }

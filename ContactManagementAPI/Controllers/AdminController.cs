@@ -77,6 +77,49 @@ namespace ContactManagementAPI.Controllers
             return fallback;
         }
 
+        private static void ExtractZipNormalizingSeparators(string zipPath, string destinationRoot)
+        {
+            using var archive = ZipFile.OpenRead(zipPath);
+            var fullRoot = Path.GetFullPath(destinationRoot);
+            if (!fullRoot.EndsWith(Path.DirectorySeparatorChar))
+            {
+                fullRoot += Path.DirectorySeparatorChar;
+            }
+
+            foreach (var entry in archive.Entries)
+            {
+                var normalized = (entry.FullName ?? string.Empty)
+                    .Replace('\\', '/')
+                    .TrimStart('/');
+
+                if (string.IsNullOrWhiteSpace(normalized))
+                {
+                    continue;
+                }
+
+                var normalizedForOs = normalized.Replace('/', Path.DirectorySeparatorChar);
+                var targetPath = Path.GetFullPath(Path.Combine(destinationRoot, normalizedForOs));
+                if (!targetPath.StartsWith(fullRoot, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Invalid ZIP entry path.");
+                }
+
+                if (normalized.EndsWith("/", StringComparison.Ordinal))
+                {
+                    Directory.CreateDirectory(targetPath);
+                    continue;
+                }
+
+                var directory = Path.GetDirectoryName(targetPath);
+                if (!string.IsNullOrWhiteSpace(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                entry.ExtractToFile(targetPath, overwrite: true);
+            }
+        }
+
         private static string NormalizeText(string? value)
         {
             return (value ?? string.Empty).Trim().ToUpperInvariant();
@@ -799,7 +842,7 @@ namespace ContactManagementAPI.Controllers
                     await backupZip.CopyToAsync(fs);
                 }
 
-                ZipFile.ExtractToDirectory(zipPath, tempRoot);
+                ExtractZipNormalizingSeparators(zipPath, tempRoot);
 
                 // Expect: ContactManagement.db + uploads/photos + uploads/documents
                 var backupDbPath = Directory.GetFiles(tempRoot, "ContactManagement.db", SearchOption.AllDirectories)

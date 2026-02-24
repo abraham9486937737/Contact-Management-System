@@ -102,7 +102,7 @@
     }
     else
     {
-        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+        @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
         {
             <div class="bulk-actions" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;" id="bulkActionsBar">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -147,7 +147,7 @@
                 <table class="table table-hover table-striped contacts-table" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                     <tr>
-                        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                        @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
                         {
                             <th style="width: 50px; text-align: center;">
                                 <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" title="Select All">
@@ -171,7 +171,7 @@
                         var _rowBg = (__i % 2 == 0) ? "#f3f7fb" : "#ffffff";
                     
                         <tr style="background-color:@_rowBg;">
-                            @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                            @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
                             {
                                 <td style="text-align: center; vertical-align: middle;">
                                     <input type="checkbox" class="contact-checkbox form-check-input" data-contact-id="@contact.Id" style="cursor: pointer;">
@@ -263,7 +263,7 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     }
-                                    @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                                    @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
                                     {
                                         <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
@@ -284,7 +284,7 @@
             {
                 <div class="card mb-2">
                     <div class="card-body d-flex align-items-center" style="gap:12px;">
-                        @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                        @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
                         {
                             <div style="flex: 0 0 auto;">
                                 <input type="checkbox" class="contact-checkbox form-check-input" data-contact-id="@contact.Id" style="cursor: pointer;" />
@@ -320,7 +320,7 @@
                             {
                                 <a href="/home/edit/@contact.Id" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                             }
-                            @if (UserContext.HasRight(RightsCatalog.ContactsDelete))
+                            @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
                             {
                                 <a href="/home/delete/@contact.Id" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></a>
                             }

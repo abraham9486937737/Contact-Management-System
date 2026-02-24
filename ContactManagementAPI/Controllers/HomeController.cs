@@ -378,9 +378,9 @@ namespace ContactManagementAPI.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (!currentUser.IsAdmin)
+            if (!string.Equals(currentUser.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                TempData["ErrorMessage"] = "Only Super Admin can delete contacts.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -406,9 +406,9 @@ namespace ContactManagementAPI.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (!currentUser.IsAdmin)
+            if (!string.Equals(currentUser.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                TempData["ErrorMessage"] = "Only Super Admin can delete contacts.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -434,9 +434,9 @@ namespace ContactManagementAPI.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (!currentUser.IsAdmin)
+            if (!string.Equals(currentUser.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Only admin can delete contacts.";
+                TempData["ErrorMessage"] = "Only Super Admin can delete contacts.";
                 return RedirectToAction(nameof(Index));
             }
 
