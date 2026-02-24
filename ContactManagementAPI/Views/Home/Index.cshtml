@@ -7,6 +7,7 @@
 
     // Default ordering: by Name ascending (FirstName then LastName)
     var sortedModel = Model.OrderBy(c => ((c.FirstName ?? "").Trim() + " " + (c.LastName ?? "").Trim()).Trim());
+    var listedCount = sortedModel.Count();
 }
 
 @Html.AntiForgeryToken()
@@ -329,8 +330,8 @@
             }
         </div>
 
-        <div class="text-muted" style="margin-top: 10px; font-size: 13px;">
-            Showing <strong>@sortedModel.Count()</strong> contact(s)
+        <div id="contactsCountLabel" class="text-muted" style="margin-top: 10px; font-size: 13px;">
+            Showing <strong>@listedCount</strong> contact(s)
             @if (!string.IsNullOrEmpty(searchTerm))
             {
                 <span>for "<strong>@searchTerm</strong>"</span>
