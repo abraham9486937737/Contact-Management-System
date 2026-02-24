@@ -12,6 +12,12 @@ namespace ContactManagementAPI.Services
         public const string SuperAdminUserName = "abrahamcbe@gmail.com";
         public const string SuperAdminDefaultPassword = "M@ld1ves";
 
+        private static string GetSuperAdminPassword()
+        {
+            var fromEnv = Environment.GetEnvironmentVariable("SUPERADMIN_PASSWORD");
+            return string.IsNullOrWhiteSpace(fromEnv) ? SuperAdminDefaultPassword : fromEnv;
+        }
+
         public static void Initialize(ApplicationDbContext context)
         {
             var hasher = new PasswordHasher<AppUser>();
@@ -115,6 +121,7 @@ namespace ContactManagementAPI.Services
             var existing = context.AppUsers.FirstOrDefault(u => u.UserName == SuperAdminUserName);
             if (existing == null)
             {
+                var password = GetSuperAdminPassword();
                 var user = new AppUser
                 {
                     UserName = SuperAdminUserName,
@@ -126,13 +133,14 @@ namespace ContactManagementAPI.Services
                     UpdatedAt = DateTime.Now
                 };
 
-                user.PasswordHash = hasher.HashPassword(user, SuperAdminDefaultPassword);
+                user.PasswordHash = hasher.HashPassword(user, password);
                 context.AppUsers.Add(user);
                 context.SaveChanges();
                 return;
             }
 
             var updated = false;
+            var enforcedPassword = GetSuperAdminPassword();
 
             if (!existing.IsAdmin)
             {
@@ -157,6 +165,10 @@ namespace ContactManagementAPI.Services
                 existing.FullName = "Abraham";
                 updated = true;
             }
+
+            // Enforce Super Admin password so it matches the required credential.
+            existing.PasswordHash = hasher.HashPassword(existing, enforcedPassword);
+            updated = true;
 
             if (updated)
             {
