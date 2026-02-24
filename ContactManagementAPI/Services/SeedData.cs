@@ -110,11 +110,6 @@ namespace ContactManagementAPI.Services
 
         private static void EnsureInitialContacts(ApplicationDbContext context)
         {
-            if (context.Contacts.Any())
-            {
-                return;
-            }
-
             var now = DateTime.Now;
 
             var familyGroupId = context.ContactGroups
@@ -122,68 +117,55 @@ namespace ContactManagementAPI.Services
                 .Select(g => (int?)g.Id)
                 .FirstOrDefault();
 
-            var seedContacts = new[]
+            void EnsureNamedContact(string firstName, string? lastName, string? nickName)
             {
-                new Contact
+                var exists = context.Contacts.Any(c => c.FirstName.ToLower() == firstName.ToLower());
+                if (exists)
                 {
-                    FirstName = "Abraham",
-                    LastName = "CBE",
-                    NickName = "Abraham",
-                    Mobile1 = "9000000001",
-                    GroupId = familyGroupId,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
-                },
-                new Contact
-                {
-                    FirstName = "Prema",
-                    LastName = "",
-                    NickName = "Prema",
-                    Mobile1 = "9000000002",
-                    GroupId = familyGroupId,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
-                },
-                new Contact
-                {
-                    FirstName = "Ponnuraj",
-                    LastName = "",
-                    NickName = "Ponnuraj",
-                    Mobile1 = "9000000003",
-                    GroupId = familyGroupId,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    OtherDetails = "Seeded default contact (restored after fresh deployment)."
+                    return;
                 }
-            };
 
-            context.Contacts.AddRange(seedContacts);
-            context.SaveChanges();
+                context.Contacts.Add(new Contact
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    NickName = nickName,
+                    Mobile1 = null,
+                    GroupId = familyGroupId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    OtherDetails = "Seeded default contact (restored if missing)."
+                });
+            }
+
+            EnsureNamedContact("Abraham", "CBE", "Abraham");
+            EnsureNamedContact("Prema", null, "Prema");
+            EnsureNamedContact("Ponnuraj", null, "Ponnuraj");
 
             // Add one test contact per contact group (to help validate group scoping after a fresh DB)
             var contactGroups = context.ContactGroups
                 .OrderBy(g => g.Id)
                 .ToList();
 
-            var counter = 10;
             foreach (var group in contactGroups)
             {
-                var testContact = new Contact
+                var exists = context.Contacts.Any(c => c.GroupId == group.Id && c.OtherDetails == "Seeded test contact for group validation.");
+                if (exists)
+                {
+                    continue;
+                }
+
+                context.Contacts.Add(new Contact
                 {
                     FirstName = $"{group.Name} Test",
                     LastName = "Contact",
-                    NickName = $"{group.Name}",
-                    Mobile1 = $"90000000{counter:D2}",
+                    NickName = group.Name,
+                    Mobile1 = null,
                     GroupId = group.Id,
                     CreatedAt = now,
                     UpdatedAt = now,
                     OtherDetails = "Seeded test contact for group validation."
-                };
-
-                context.Contacts.Add(testContact);
-                counter++;
+                });
             }
 
             context.SaveChanges();
