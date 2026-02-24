@@ -1,6 +1,7 @@
 @model IEnumerable<ContactManagementAPI.Models.AppUser>
 @{
     ViewData["Title"] = "Users";
+    var isSuperAdmin = (ViewBag.IsSuperAdmin as bool?) == true;
 }
 
 <div class="admin-container">
@@ -14,10 +15,24 @@
         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
     }
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
     <div class="table-responsive">
-        <table class="table">
+        @if (isSuperAdmin)
+        {
+            <form method="post" action="/admin/deleteselectedusers" onsubmit="return confirm('Delete selected users? This cannot be undone.');">
+                @Html.AntiForgeryToken()
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Selected</button>
+                    <span class="text-muted" style="font-size: 13px;">Note: Delete contacts first, then users, then user groups.</span>
+                </div>
+                <table class="table">
             <thead>
                 <tr>
+                    <th style="width: 50px; text-align:center;">Select</th>
                     <th>User Name</th>
                     <th>Full Name</th>
                     <th>Group</th>
@@ -29,19 +44,67 @@
             <tbody>
                 @foreach (var user in Model)
                 {
+                    var isProtected = string.Equals(user.UserName, ContactManagementAPI.Services.SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase) ||
+                                      string.Equals(user.UserName, "admin", StringComparison.OrdinalIgnoreCase);
                     <tr>
+                        <td style="text-align:center; vertical-align:middle;">
+                            @if (isProtected)
+                            {
+                                <input type="checkbox" disabled title="Protected system user" />
+                            }
+                            else
+                            {
+                                <input type="checkbox" name="userIds" value="@user.Id" />
+                            }
+                        </td>
                         <td>@user.UserName</td>
                         <td>@user.FullName</td>
                         <td>@(user.Group?.Name ?? "-")</td>
                         <td>@(user.IsAdmin ? "Yes" : "No")</td>
                         <td>@(user.IsActive ? "Active" : "Inactive")</td>
                         <td>
-                            <a href="/admin/edituser/@user.Id" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
-                            <a href="/admin/userrights/@user.Id" class="btn btn-sm btn-info"><i class="fas fa-key"></i> Rights</a>
+                            @if (!isProtected)
+                            {
+                                <a href="/admin/edituser/@user.Id" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                                <a href="/admin/userrights/@user.Id" class="btn btn-sm btn-info"><i class="fas fa-key"></i> Rights</a>
+                            }
                         </td>
                     </tr>
                 }
             </tbody>
-        </table>
+                </table>
+            </form>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Full Name</th>
+                        <th>Group</th>
+                        <th>Admin</th>
+                        <th>Status</th>
+                        <th style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.UserName</td>
+                            <td>@user.FullName</td>
+                            <td>@(user.Group?.Name ?? "-")</td>
+                            <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                            <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                            <td>
+                                <a href="/admin/edituser/@user.Id" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                                <a href="/admin/userrights/@user.Id" class="btn btn-sm btn-info"><i class="fas fa-key"></i> Rights</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 </div>

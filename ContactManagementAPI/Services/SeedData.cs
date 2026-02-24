@@ -9,6 +9,9 @@ namespace ContactManagementAPI.Services
 {
     public static class SeedData
     {
+        public const string SuperAdminUserName = "abrahamcbe@gmail.com";
+        public const string SuperAdminDefaultPassword = "M@ld1ves";
+
         public static void Initialize(ApplicationDbContext context)
         {
             var hasher = new PasswordHasher<AppUser>();
@@ -92,7 +95,74 @@ namespace ContactManagementAPI.Services
                 context.SaveChanges();
             }
 
+            EnsureSuperAdminUser(context, hasher);
+
             EnsureContactGroupUsers(context, hasher);
+        }
+
+        private static void EnsureSuperAdminUser(ApplicationDbContext context, PasswordHasher<AppUser> hasher)
+        {
+            var adminGroupId = context.UserGroups
+                .Where(g => g.Name == "Administrators")
+                .Select(g => g.Id)
+                .FirstOrDefault();
+
+            if (adminGroupId <= 0)
+            {
+                return;
+            }
+
+            var existing = context.AppUsers.FirstOrDefault(u => u.UserName == SuperAdminUserName);
+            if (existing == null)
+            {
+                var user = new AppUser
+                {
+                    UserName = SuperAdminUserName,
+                    FullName = "Abraham",
+                    IsAdmin = true,
+                    IsActive = true,
+                    GroupId = adminGroupId,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                user.PasswordHash = hasher.HashPassword(user, SuperAdminDefaultPassword);
+                context.AppUsers.Add(user);
+                context.SaveChanges();
+                return;
+            }
+
+            var updated = false;
+
+            if (!existing.IsAdmin)
+            {
+                existing.IsAdmin = true;
+                updated = true;
+            }
+
+            if (!existing.IsActive)
+            {
+                existing.IsActive = true;
+                updated = true;
+            }
+
+            if (existing.GroupId != adminGroupId)
+            {
+                existing.GroupId = adminGroupId;
+                updated = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(existing.FullName))
+            {
+                existing.FullName = "Abraham";
+                updated = true;
+            }
+
+            if (updated)
+            {
+                existing.UpdatedAt = DateTime.Now;
+                context.SaveChanges();
+            }
         }
 
         private static void EnsureContactGroupUsers(ApplicationDbContext context, PasswordHasher<AppUser> hasher)

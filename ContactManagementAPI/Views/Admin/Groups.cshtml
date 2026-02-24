@@ -1,6 +1,7 @@
 @model IEnumerable<ContactManagementAPI.Models.UserGroup>
 @{
     ViewData["Title"] = "User Groups";
+    var isSuperAdmin = (ViewBag.IsSuperAdmin as bool?) == true;
 }
 
 <div class="admin-container">
@@ -14,10 +15,24 @@
         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
     }
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
     <div class="table-responsive">
-        <table class="table">
+        @if (isSuperAdmin)
+        {
+            <form method="post" action="/admin/deleteselectedgroups" onsubmit="return confirm('Delete selected user groups? This cannot be undone.');">
+                @Html.AntiForgeryToken()
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Selected</button>
+                    <span class="text-muted" style="font-size: 13px;">Order: delete contacts → delete users → delete user group.</span>
+                </div>
+                <table class="table">
             <thead>
                 <tr>
+                    <th style="width: 50px; text-align:center;">Select</th>
                     <th>Group Name</th>
                     <th>Description</th>
                     <th style="width: 220px;">Actions</th>
@@ -27,6 +42,16 @@
                 @foreach (var group in Model)
                 {
                     <tr>
+                        <td style="text-align:center; vertical-align:middle;">
+                            @if (string.Equals(group.Name, "Administrators", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <input type="checkbox" disabled title="Protected group" />
+                            }
+                            else
+                            {
+                                <input type="checkbox" name="groupIds" value="@group.Id" />
+                            }
+                        </td>
                         <td>@group.Name</td>
                         <td>@group.Description</td>
                         <td>
@@ -36,6 +61,33 @@
                     </tr>
                 }
             </tbody>
-        </table>
+                </table>
+            </form>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Group Name</th>
+                        <th>Description</th>
+                        <th style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in Model)
+                    {
+                        <tr>
+                            <td>@group.Name</td>
+                            <td>@group.Description</td>
+                            <td>
+                                <a href="/admin/editgroup/@group.Id" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                                <a href="/admin/grouprights/@group.Id" class="btn btn-sm btn-info"><i class="fas fa-key"></i> Rights</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 </div>

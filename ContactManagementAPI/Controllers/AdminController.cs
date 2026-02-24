@@ -25,13 +25,56 @@ namespace ContactManagementAPI.Controllers
             _adminHistoryService = adminHistoryService;
         }
 
+        private static bool IsSuperAdminUser(AppUser? user)
+        {
+            return user != null && string.Equals(user.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsProtectedSystemUser(AppUser? user)
+        {
+            return user != null &&
+                   (IsSuperAdminUser(user) || string.Equals(user.UserName, "admin", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private ContactGroup? ResolveContactGroupForUserGroup(UserGroup? userGroup)
+        {
+            if (userGroup == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(userGroup.Name) && userGroup.Name.StartsWith("ContactGroup - ", StringComparison.OrdinalIgnoreCase))
+            {
+                var contactGroupName = userGroup.Name.Substring("ContactGroup - ".Length).Trim();
+                if (!string.IsNullOrWhiteSpace(contactGroupName))
+                {
+                    return _context.ContactGroups.FirstOrDefault(cg => cg.Name == contactGroupName);
+                }
+            }
+
+            return _context.ContactGroups.FirstOrDefault(cg => cg.Id == userGroup.Id);
+        }
+
         [RequireRight(RightsCatalog.AdminManageUsers)]
         public IActionResult Users()
         {
-            var users = _context.AppUsers
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
+            var usersQuery = _context.AppUsers
                 .Include(u => u.Group)
+                .AsQueryable();
+
+            if (!isSuperAdmin)
+            {
+                usersQuery = usersQuery.Where(u => !string.Equals(u.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var users = usersQuery
                 .OrderBy(u => u.UserName)
                 .ToList();
+
+            ViewBag.IsSuperAdmin = isSuperAdmin;
 
             return View(users);
         }
@@ -48,6 +91,14 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.AdminManageUsers)]
         public IActionResult CreateUser(UserCreateViewModel model)
         {
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
+            if (string.Equals(model.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase) && !isSuperAdmin)
+            {
+                ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "Super Admin user name is reserved.");
+            }
+
             if (_context.AppUsers.Any(u => u.UserName == model.UserName))
             {
                 ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "User name already exists.");
@@ -88,9 +139,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.AdminManageUsers)]
         public IActionResult EditUser(int id)
         {
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
             var user = _context.AppUsers.FirstOrDefault(u => u.Id == id);
             if (user == null)
                 return NotFound();
+
+            if (IsSuperAdminUser(user) && !isSuperAdmin)
+            {
+                return NotFound();
+            }
 
             var model = new UserEditViewModel
             {
@@ -111,17 +170,41 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.AdminManageUsers)]
         public IActionResult EditUser(UserEditViewModel model)
         {
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
             var user = _context.AppUsers.FirstOrDefault(u => u.Id == model.Id);
             if (user == null)
                 return NotFound();
+
+            if (IsSuperAdminUser(user) && !isSuperAdmin)
+            {
+                return NotFound();
+            }
 
             if (_context.AppUsers.Any(u => u.UserName == model.UserName && u.Id != model.Id))
             {
                 ModelState.AddModelError(nameof(UserEditViewModel.UserName), "User name already exists.");
             }
 
+            if (string.Equals(model.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase) && !IsSuperAdminUser(user))
+            {
+                ModelState.AddModelError(nameof(UserEditViewModel.UserName), "Super Admin user name is reserved.");
+            }
+
             if (!ModelState.IsValid)
             {
+                ViewData["Groups"] = _context.UserGroups.OrderBy(g => g.Name).ToList();
+                return View(model);
+            }
+
+            var wasAdminUser = string.Equals(user.UserName, "admin", StringComparison.OrdinalIgnoreCase);
+            var wasSuperAdminUser = IsSuperAdminUser(user);
+
+            if (wasSuperAdminUser)
+            {
+                // Super Admin is immutable (prevents lockout and prevents admin-level changes even by mistake)
+                ModelState.AddModelError(string.Empty, "Super Admin account cannot be edited.");
                 ViewData["Groups"] = _context.UserGroups.OrderBy(g => g.Name).ToList();
                 return View(model);
             }
@@ -133,7 +216,7 @@ namespace ContactManagementAPI.Controllers
             user.IsActive = model.IsActive;
             user.UpdatedAt = DateTime.Now;
 
-            if (string.Equals(user.UserName, "admin", StringComparison.OrdinalIgnoreCase))
+            if (wasAdminUser)
             {
                 var administratorsGroupId = _context.UserGroups
                     .Where(g => g.Name == "Administrators")
@@ -169,12 +252,20 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.AdminManageRights)]
         public IActionResult UserRights(int id)
         {
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
             var user = _context.AppUsers
                 .Include(u => u.Group)
                 .FirstOrDefault(u => u.Id == id);
 
             if (user == null)
                 return NotFound();
+
+            if (IsSuperAdminUser(user) && !isSuperAdmin)
+            {
+                return NotFound();
+            }
 
             var userRights = _context.UserRights
                 .Where(r => r.AppUserId == id)
@@ -219,9 +310,17 @@ namespace ContactManagementAPI.Controllers
         [RequireRight(RightsCatalog.AdminManageRights)]
         public IActionResult UserRights(UserRightsViewModel model)
         {
+            var currentUser = _userContextService.CurrentUser;
+            var isSuperAdmin = IsSuperAdminUser(currentUser);
+
             var user = _context.AppUsers.FirstOrDefault(u => u.Id == model.UserId);
             if (user == null)
                 return NotFound();
+
+            if (IsSuperAdminUser(user) && !isSuperAdmin)
+            {
+                return NotFound();
+            }
 
             foreach (var right in model.Rights)
             {
@@ -268,6 +367,8 @@ namespace ContactManagementAPI.Controllers
             var groups = _context.UserGroups
                 .OrderBy(g => g.Name)
                 .ToList();
+
+            ViewBag.IsSuperAdmin = IsSuperAdminUser(_userContextService.CurrentUser);
 
             return View(groups);
         }
@@ -337,6 +438,166 @@ namespace ContactManagementAPI.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.AdminManageUsers)]
+        public IActionResult DeleteSelectedUsers(List<int> userIds)
+        {
+            var currentUser = _userContextService.CurrentUser;
+            if (!IsSuperAdminUser(currentUser))
+            {
+                return Forbid();
+            }
+
+            if (userIds == null || userIds.Count == 0)
+            {
+                TempData["ErrorMessage"] = "No users selected.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var messages = new System.Collections.Generic.List<string>();
+            var deleted = 0;
+
+            foreach (var userId in userIds.Distinct())
+            {
+                var user = _context.AppUsers
+                    .Include(u => u.Group)
+                    .FirstOrDefault(u => u.Id == userId);
+
+                if (user == null)
+                {
+                    continue;
+                }
+
+                if (IsProtectedSystemUser(user))
+                {
+                    messages.Add($"User '{user.UserName}' cannot be deleted.");
+                    continue;
+                }
+
+                var mappedContactGroup = ResolveContactGroupForUserGroup(user.Group);
+                if (mappedContactGroup != null)
+                {
+                    var hasContacts = _context.Contacts.Any(c => c.GroupId == mappedContactGroup.Id);
+                    if (hasContacts)
+                    {
+                        messages.Add($"Delete contacts in '{mappedContactGroup.Name}' first, then delete user '{user.UserName}'.");
+                        continue;
+                    }
+                }
+
+                _context.AppUsers.Remove(user);
+                deleted++;
+
+                _adminHistoryService.Log(
+                    actionType: "Delete",
+                    entityType: "User",
+                    entityId: user.Id,
+                    performedBy: currentUser?.UserName ?? "Unknown",
+                    details: $"Deleted user '{user.UserName}'.");
+            }
+
+            if (deleted > 0)
+            {
+                _context.SaveChanges();
+            }
+
+            if (messages.Count > 0)
+            {
+                TempData["ErrorMessage"] = string.Join(" ", messages);
+            }
+
+            if (deleted > 0)
+            {
+                TempData["SuccessMessage"] = $"Deleted {deleted} user(s).";
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireRight(RightsCatalog.AdminManageGroups)]
+        public IActionResult DeleteSelectedGroups(List<int> groupIds)
+        {
+            var currentUser = _userContextService.CurrentUser;
+            if (!IsSuperAdminUser(currentUser))
+            {
+                return Forbid();
+            }
+
+            if (groupIds == null || groupIds.Count == 0)
+            {
+                TempData["ErrorMessage"] = "No groups selected.";
+                return RedirectToAction(nameof(Groups));
+            }
+
+            var messages = new System.Collections.Generic.List<string>();
+            var deleted = 0;
+
+            foreach (var groupId in groupIds.Distinct())
+            {
+                var group = _context.UserGroups
+                    .Include(g => g.Users)
+                    .FirstOrDefault(g => g.Id == groupId);
+
+                if (group == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(group.Name, "Administrators", StringComparison.OrdinalIgnoreCase))
+                {
+                    messages.Add("Administrators group cannot be deleted.");
+                    continue;
+                }
+
+                var mappedContactGroup = ResolveContactGroupForUserGroup(group);
+                if (mappedContactGroup != null)
+                {
+                    var hasContacts = _context.Contacts.Any(c => c.GroupId == mappedContactGroup.Id);
+                    if (hasContacts)
+                    {
+                        messages.Add($"Delete contacts in '{mappedContactGroup.Name}' first, then delete users, then delete group '{group.Name}'.");
+                        continue;
+                    }
+                }
+
+                if (group.Users.Any())
+                {
+                    messages.Add($"Delete users in group '{group.Name}' first, then delete the group.");
+                    continue;
+                }
+
+                _context.UserGroups.Remove(group);
+                deleted++;
+
+                _adminHistoryService.Log(
+                    actionType: "Delete",
+                    entityType: "Group",
+                    entityId: group.Id,
+                    performedBy: currentUser?.UserName ?? "Unknown",
+                    details: $"Deleted group '{group.Name}'.");
+            }
+
+            if (deleted > 0)
+            {
+                _context.SaveChanges();
+            }
+
+            if (messages.Count > 0)
+            {
+                TempData["ErrorMessage"] = string.Join(" ", messages);
+            }
+
+            if (deleted > 0)
+            {
+                TempData["SuccessMessage"] = $"Deleted {deleted} group(s).";
+            }
+
+            return RedirectToAction(nameof(Groups));
         }
 
         [HttpPost]
