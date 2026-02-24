@@ -328,6 +328,15 @@
                 </div>
             }
         </div>
+
+        <div class="text-muted" style="margin-top: 10px; font-size: 13px;">
+            Showing <strong>@sortedModel.Count()</strong> contact(s)
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <span>for "<strong>@searchTerm</strong>"</span>
+            }
+            .
+        </div>
     }
 </div>
 
