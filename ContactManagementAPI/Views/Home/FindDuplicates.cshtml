@@ -1,0 +1,107 @@
+@using ContactManagementAPI.Services
+@model List<ContactDuplicate>
+@{
+    ViewData["Title"] = "Find Duplicates";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-copy"></i> Potential Duplicate Contacts</h2>
+            <p class="text-muted">Automatically detected similar contacts based on name, email, and phone matching</p>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i> <strong>Great!</strong> No duplicate contacts found.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle"></i> Found <strong>@Model.Count</strong> potential duplicate pair(s).
+        </div>
+
+        <div class="row">
+            @foreach (var duplicate in Model.OrderByDescending(x => x.SimilarityScore))
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                Similarity: <span class="badge bg-danger">@($"{(duplicate.SimilarityScore * 100):F0}%")</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Contact 1</h6>
+                                            <p class="mb-2">
+                                                <strong>@duplicate.Contact1Name</strong>
+                                            </p>
+                                            <a href="@Url.Action("Details", new { id = duplicate.Contact1Id })" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = duplicate.Contact1Id })" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Contact 2</h6>
+                                            <p class="mb-2">
+                                                <strong>@duplicate.Contact2Name</strong>
+                                            </p>
+                                            <a href="@Url.Action("Details", new { id = duplicate.Contact2Id })" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = duplicate.Contact2Id })" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-light mt-3 mb-0">
+                                <strong>Action:</strong> Please review these contacts and decide whether to keep or delete one of them.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="mt-4">
+        <a href="@Url.Action("Dashboard")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Alert user about duplicates on page load
+        @if (Model.Count > 0)
+        {
+            <text>
+                // Show notification about duplicates found
+                const alertBox = document.querySelector('.alert-info');
+                if (alertBox) {
+                    alertBox.scrollIntoView({ behavior: 'smooth' });
+                }
+            </text>
+        }
+    </script>
+}

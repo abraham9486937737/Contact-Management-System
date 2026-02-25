@@ -1,0 +1,85 @@
+@inject ContactManagementAPI.Services.UserContextService UserContext
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Contact Management System - Manage your contacts efficiently">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Contacts">
+    <title>@ViewData["Title"] - Contact Management System</title>
+    <link rel="stylesheet" href="~/css/style.v2.css?v=@DateTime.UtcNow.Ticks" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="manifest" href="~/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="~/icon-192.png">
+    <link rel="apple-touch-icon" href="~/icon-192.png">
+</head>
+<body>
+    <!-- Top Info Bar -->
+    <div class="top-info-bar">
+        <div class="info-section">
+            <i class="fas fa-envelope"></i>
+            <span class="info-text"><strong>Email:</strong> abrahamcbe@gmail.com</span>
+        </div>
+        <div class="info-section">
+            <i class="fas fa-phone"></i>
+            <span class="info-text"><strong>Phone:</strong> +91 94869 37737</span>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <h1><i class="fas fa-home"></i> <span class="brand-text">Contact Management System</span></h1>
+                </a>
+            </div>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="navbar-links" id="navbarLinks">
+                @if (UserContext.IsAuthenticated && UserContext.HasRight(RightsCatalog.ContactsView))
+                {
+                    <a href="/" class="nav-link"><i class="fas fa-list"></i> <span>All Contacts</span></a>
+                }
+                @if (UserContext.IsAuthenticated && UserContext.HasRight(RightsCatalog.ContactsCreate))
+                {
+                    <a href="/home/create" class="nav-link btn-primary"><i class="fas fa-plus"></i> <span>Add New Contact</span></a>
+                }
+                @if (UserContext.IsAuthenticated && (UserContext.HasRight(RightsCatalog.AdminManageUsers) || UserContext.HasRight(RightsCatalog.AdminManageGroups) || UserContext.HasRight(RightsCatalog.AdminManageRights)))
+                {
+                    <a href="/admin/users" class="nav-link"><i class="fas fa-users-cog"></i> <span>Users</span></a>
+                    <a href="/admin/groups" class="nav-link"><i class="fas fa-layer-group"></i> <span>Groups</span></a>
+                    <a href="/admin/history" class="nav-link"><i class="fas fa-history"></i> <span>History</span></a>
+                }
+                <div class="nav-auth">
+                    @if (UserContext.IsAuthenticated)
+                    {
+                        <span class="nav-user"><i class="fas fa-user-circle"></i> <span>@UserContext.CurrentUser?.UserName</span></span>
+                        <a href="/account/logout" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+                    }
+                    else
+                    {
+                        <a href="/account/login" class="nav-link"><i class="fas fa-sign-in-alt"></i> <span>Login</span></a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <div class="main-container">
+        @RenderBody()
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Contact Management System. All rights reserved.</p>
+    </footer>
+
+    <script src="~/js/main.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

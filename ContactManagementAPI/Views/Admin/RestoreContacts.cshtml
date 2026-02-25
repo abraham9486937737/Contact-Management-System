@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Restore Contacts";
+}
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fas fa-cloud-upload-alt"></i> Restore Contacts (Super Admin)</h2>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="alert alert-warning">
+        This will merge Abraham / Prema / Ponnuraj from a backup ZIP into the current database and copy their photos/documents.
+        It does not delete your existing test contacts.
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label for="backupZip"><strong>Backup ZIP</strong></label>
+            <input type="file" id="backupZip" name="backupZip" class="form-control" accept=".zip" required />
+            <small class="form-text text-muted">
+                ZIP must contain <code>ContactManagement.db</code> and <code>uploads/photos</code>, <code>uploads/documents</code>.
+            </small>
+        </div>
+        <div class="form-actions" style="margin-top:12px;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Restore contacts from this backup ZIP?');">
+                <i class="fas fa-rotate"></i> Restore Now
+            </button>
+            <a href="/" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

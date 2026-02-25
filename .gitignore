@@ -1,0 +1,65 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Output folder for uploads
+wwwroot/uploads/photos/*
+wwwroot/uploads/documents/*
+!wwwroot/uploads/photos/.gitkeep
+!wwwroot/uploads/documents/.gitkeep
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Entity Framework migrations (optional, keep your own)
+Migrations/
+
+# Local database
+appsettings.local.json
+appsettings.Development.json
+
+# Node modules (if using frontend build tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db

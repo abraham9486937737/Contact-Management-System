@@ -1,0 +1,54 @@
+@model ContactManagementAPI.ViewModels.GroupRightsViewModel
+@{
+    ViewData["Title"] = "Group Rights";
+}
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fas fa-key"></i> Rights for @Model.GroupName</h2>
+        <a href="/admin/groups" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <form method="post" asp-action="GroupRights">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="GroupId" />
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Right</th>
+                        <th style="width: 140px;">Granted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Rights.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model.Rights[i].Category</td>
+                            <td>
+                                @Model.Rights[i].Label
+                                <input type="hidden" asp-for="Rights[@i].Key" />
+                                <input type="hidden" asp-for="Rights[@i].Category" />
+                                <input type="hidden" asp-for="Rights[@i].Label" />
+                            </td>
+                            <td>
+                                <input asp-for="Rights[@i].IsGranted" type="checkbox" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Rights</button>
+        </div>
+    </form>
+</div>

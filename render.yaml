@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: contact-management-system
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DISABLE_HTTPS_REDIRECTION
+        value: "true"
+      - key: SQLITE_DB_PATH
+        value: /var/data/ContactManagement.db
+    disk:
+      name: contact-management-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.git/
+**/.venv/
+
+Deployment/
+Installers/
+Published/
+
+screenshots/
+*.rar
+*.zip
+*.7z
+*.pdf
+*.docx

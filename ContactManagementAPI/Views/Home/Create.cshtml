@@ -1,0 +1,312 @@
+@model ContactManagementAPI.Models.Contact
+@{
+    ViewData["Title"] = "Create New Contact";
+    var groups = (ViewData["Groups"] as List<ContactManagementAPI.Models.ContactGroup>) ?? new List<ContactManagementAPI.Models.ContactGroup>();
+    var bankAccounts = (ViewData["BankAccounts"] as List<ContactManagementAPI.Models.ContactBankAccount>) ?? new List<ContactManagementAPI.Models.ContactBankAccount> { new ContactManagementAPI.Models.ContactBankAccount() };
+    var bankNames = (ViewData["BankNames"] as List<string>) ?? new List<string>();
+}
+
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="fas fa-plus-circle"></i> Create New Contact</h2>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="contact-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="form-section">
+            <h4>Profile Photo</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="profilePhoto">Upload Profile Photo</label>
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" class="form-control" />
+                    <small class="form-text text-muted">Accepted formats: JPG, PNG, GIF, BMP (Max 5MB)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Basic Information</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="FirstName">First Name *</label>
+                    <input asp-for="FirstName" class="form-control" required autocomplete="given-name" />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="LastName">Last Name</label>
+                    <input asp-for="LastName" class="form-control" autocomplete="family-name" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="NickName">Nick Name</label>
+                    <input asp-for="NickName" class="form-control" autocomplete="nickname" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Gender">Gender</label>
+                    <select asp-for="Gender" class="form-control">
+                        <option value="">-- Select Gender --</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="DateOfBirth">Date of Birth</label>
+                    <input asp-for="DateOfBirth" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="GroupId">Contact Group</label>
+                    <select asp-for="GroupId" class="form-control">
+                        <option value="">-- Select Group --</option>
+                        @foreach (var group in groups)
+                        {
+                            <option value="@group.Id">@group.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Contact Details</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Email">Email Address</label>
+                    <input asp-for="Email" type="email" class="form-control" inputmode="email" autocomplete="email" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Mobile1">Mobile 1</label>
+                    <input asp-for="Mobile1" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Mobile2">Mobile 2</label>
+                    <input asp-for="Mobile2" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Mobile3">Mobile 3</label>
+                    <input asp-for="Mobile3" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="WhatsAppNumber">WhatsApp Number</label>
+                    <input asp-for="WhatsAppNumber" type="tel" class="form-control" inputmode="tel" autocomplete="tel" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Identity Information</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="PassportNumber">Passport Number</label>
+                    <input asp-for="PassportNumber" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="PanNumber">PAN Number</label>
+                    <input asp-for="PanNumber" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="AadharNumber">Aadhar Number</label>
+                    <input asp-for="AadharNumber" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="DrivingLicenseNumber">Driving License Number</label>
+                    <input asp-for="DrivingLicenseNumber" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="VotersId">Voters ID</label>
+                    <input asp-for="VotersId" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Bank Information</h4>
+            <datalist id="bankNameOptions">
+                @foreach (var bankName in bankNames)
+                {
+                    <option value="@bankName"></option>
+                }
+            </datalist>
+
+            <div id="bankAccountsContainer">
+                @for (var i = 0; i < bankAccounts.Count; i++)
+                {
+                    <div class="bank-account-row" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bank Account Number</label>
+                                <input name="bankAccounts[@i].AccountNumber" value="@bankAccounts[i].AccountNumber" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label>Bank Name</label>
+                                <input name="bankAccounts[@i].BankName" value="@bankAccounts[i].BankName" class="form-control" list="bankNameOptions" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Branch Name</label>
+                                <input name="bankAccounts[@i].BranchName" value="@bankAccounts[i].BranchName" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label>IFSC Code</label>
+                                <input name="bankAccounts[@i].IfscCode" value="@bankAccounts[i].IfscCode" class="form-control" />
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary remove-bank-account" style="background:#6b7280; margin-top:8px;">Remove Account</button>
+                    </div>
+                }
+            </div>
+
+            <button type="button" id="addBankAccountBtn" class="btn btn-secondary" style="background:#0EA5E9; margin-top:6px;">
+                <i class="fas fa-plus"></i> Add Another Bank Account
+            </button>
+        </div>
+
+        <div class="form-section">
+            <h4>Address Information</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label asp-for="Address">Street Address</label>
+                    <input asp-for="Address" class="form-control" autocomplete="street-address" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="City">City</label>
+                    <input asp-for="City" class="form-control" autocomplete="address-level2" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="State">State</label>
+                    <input asp-for="State" class="form-control" autocomplete="address-level1" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="PostalCode">Postal Code</label>
+                    <input asp-for="PostalCode" class="form-control" inputmode="numeric" autocomplete="postal-code" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Country">Country</label>
+                    <input asp-for="Country" class="form-control" autocomplete="country-name" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Additional Information</h4>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label asp-for="OtherDetails">Other Details / Notes</label>
+                    <textarea asp-for="OtherDetails" class="form-control" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Create Contact
+            </button>
+            <a href="/home/index" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+    
+    <div class="info-box" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+        <h4 style="color: #1976d2; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Note</h4>
+        <p style="margin: 5px 0;"><strong>Photo Albums:</strong> After creating the contact, you can add multiple photos to their album from the contact details page.</p>
+        <p style="margin: 5px 0;"><strong>Documents:</strong> You can attach documents (PDF, Word, Excel, etc.) from the contact details page after creation.</p>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bankAccountsContainer = document.getElementById('bankAccountsContainer');
+            const addBankAccountBtn = document.getElementById('addBankAccountBtn');
+
+            function reindexBankRows() {
+                const rows = bankAccountsContainer.querySelectorAll('.bank-account-row');
+                rows.forEach((row, index) => {
+                    row.querySelectorAll('input').forEach(input => {
+                        if (input.name.includes('.AccountNumber')) input.name = `bankAccounts[${index}].AccountNumber`;
+                        if (input.name.includes('.BankName')) input.name = `bankAccounts[${index}].BankName`;
+                        if (input.name.includes('.BranchName')) input.name = `bankAccounts[${index}].BranchName`;
+                        if (input.name.includes('.IfscCode')) input.name = `bankAccounts[${index}].IfscCode`;
+                    });
+                });
+            }
+
+            function wireRemoveButtons() {
+                const removeButtons = bankAccountsContainer.querySelectorAll('.remove-bank-account');
+                removeButtons.forEach(button => {
+                    button.onclick = function () {
+                        const rows = bankAccountsContainer.querySelectorAll('.bank-account-row');
+                        if (rows.length === 1) {
+                            rows[0].querySelectorAll('input').forEach(input => input.value = '');
+                            return;
+                        }
+
+                        this.closest('.bank-account-row').remove();
+                        reindexBankRows();
+                    };
+                });
+            }
+
+            addBankAccountBtn.addEventListener('click', function () {
+                const index = bankAccountsContainer.querySelectorAll('.bank-account-row').length;
+                const rowHtml = `
+                    <div class="bank-account-row" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bank Account Number</label>
+                                <input name="bankAccounts[${index}].AccountNumber" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label>Bank Name</label>
+                                <input name="bankAccounts[${index}].BankName" class="form-control" list="bankNameOptions" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Branch Name</label>
+                                <input name="bankAccounts[${index}].BranchName" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label>IFSC Code</label>
+                                <input name="bankAccounts[${index}].IfscCode" class="form-control" />
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary remove-bank-account" style="background:#6b7280; margin-top:8px;">Remove Account</button>
+                    </div>`;
+
+                bankAccountsContainer.insertAdjacentHTML('beforeend', rowHtml);
+                wireRemoveButtons();
+            });
+
+            wireRemoveButtons();
+        });
+    </script>
+}

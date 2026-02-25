@@ -1,0 +1,181 @@
+@inject ContactManagementAPI.Services.UserContextService UserContext
+@model ContactManagementAPI.Models.Contact
+@{
+    ViewData["Title"] = $"Photo Gallery - {Model.FirstName} {Model.LastName}";
+}
+
+<div class="gallery-container">
+    <div class="gallery-header">
+        <a href="/home/details/@Model.Id" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <h2><i class="fas fa-images"></i> Photo Gallery - @Model.FirstName @Model.LastName</h2>
+    </div>
+
+    @if (UserContext.HasRight(RightsCatalog.PhotosManage))
+    {
+        <div class="gallery-upload">
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drag and drop photos here or click to select</p>
+                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" />
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-plus"></i> Select Photos
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (Model.Photos.Count == 0)
+    {
+        <div class="no-items">
+            <i class="fas fa-image"></i>
+            <p>No photos yet. Upload your first photo!</p>
+        </div>
+    }
+    else
+    {
+        <div class="photo-gallery">
+            @foreach (var photo in Model.Photos)
+            {
+                <div class="photo-item" data-photo-id="@photo.Id">
+                    <div class="photo-frame">
+                        <img src="@photo.PhotoPath" alt="Photo" onerror="this.onerror=null;this.src='/uploads/photos/1_sample.jpg';" />
+                        @if (photo.IsProfilePhoto)
+                        {
+                            <span class="badge badge-profile">Profile Photo</span>
+                        }
+                    </div>
+                    <div class="photo-actions">
+                        @if (UserContext.HasRight(RightsCatalog.PhotosManage))
+                        {
+                            if (!photo.IsProfilePhoto)
+                            {
+                                <button type="button" class="btn btn-sm btn-info set-profile-btn" data-photo-id="@photo.Id">
+                                    <i class="fas fa-star"></i> Set as Profile
+                                </button>
+                            }
+                            <button type="button" class="btn btn-sm btn-danger delete-photo-btn" data-photo-id="@photo.Id">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        }
+                    </div>
+                    <p class="photo-info"><small>@photo.FileName</small></p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<script>
+    const contactId = @Model.Id;
+
+    // Handle file input and drag-drop
+    const uploadArea = document.getElementById('uploadArea');
+    const photoInput = document.getElementById('photoInput');
+
+    if (uploadArea && photoInput) {
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+    }
+
+    function handleFiles(files) {
+        for (let file of files) {
+            uploadPhoto(file);
+        }
+    }
+
+    async function uploadPhoto(file) {
+        const formData = new FormData();
+        formData.append('contactId', contactId);
+        formData.append('photoFile', file);
+
+        try {
+            const response = await fetch('/photo/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        }
+    }
+
+    // Set profile photo
+    document.querySelectorAll('.set-profile-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const photoId = this.dataset.photoId;
+            try {
+                const body = new URLSearchParams();
+                body.append('contactId', contactId);
+                body.append('photoId', photoId);
+
+                const response = await fetch('/photo/SetProfilePhoto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body
+                });
+                const data = await response.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    });
+
+    // Delete photo
+    document.querySelectorAll('.delete-photo-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!confirm('Are you sure you want to delete this photo?')) return;
+            const photoId = this.dataset.photoId;
+            try {
+                const body = new URLSearchParams();
+                body.append('id', photoId);
+                body.append('contactId', contactId);
+
+                const response = await fetch('/photo/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body
+                });
+                const data = await response.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    });
+</script>
