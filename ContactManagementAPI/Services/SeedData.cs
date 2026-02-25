@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using ContactManagementAPI.Data;
 using ContactManagementAPI.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContactManagementAPI.Services
 {
