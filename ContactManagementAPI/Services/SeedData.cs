@@ -244,7 +244,9 @@ namespace ContactManagementAPI.Services
             var firstName = spec.FirstName?.Trim() ?? string.Empty;
             var lastName = spec.LastName?.Trim();
 
-            var existing = context.Contacts.FirstOrDefault(c =>
+            var existing = context.Contacts
+                .AsTracking()
+                .FirstOrDefault(c =>
                 c.FirstName.ToLower() == firstName.ToLower() &&
                 (c.LastName ?? string.Empty).ToLower() == (lastName ?? string.Empty).ToLower());
 
@@ -344,7 +346,9 @@ namespace ContactManagementAPI.Services
                 return;
             }
 
-            var existing = context.ContactPhotos.FirstOrDefault(p => p.ContactId == contactId && p.PhotoPath == virtualPath);
+            var existing = context.ContactPhotos
+                .AsTracking()
+                .FirstOrDefault(p => p.ContactId == contactId && p.PhotoPath == virtualPath);
             if (existing != null)
             {
                 if (isProfile && !existing.IsProfilePhoto)
