@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Error";
+    var statusCode = ViewData["StatusCode"]?.ToString() ?? "500";
+    var requestPath = ViewData["Path"]?.ToString() ?? "/";
+    var errorMessage = ViewData["ErrorMessage"]?.ToString() ?? "An unexpected error occurred.";
+}
+
+<div class="container py-4">
+    <h1>Something went wrong</h1>
+    <p>The server returned an error while processing your request.</p>
+
+    <div class="alert alert-danger" role="alert">
+        <div><strong>Status:</strong> @statusCode</div>
+        <div><strong>Path:</strong> @requestPath</div>
+        <div><strong>Message:</strong> @errorMessage</div>
+    </div>
+
+    <p>
+        <a class="btn btn-primary" href="/">Go to Home</a>
+        <a class="btn btn-outline-secondary" href="/Account/Login">Go to Login</a>
+    </p>
+</div>

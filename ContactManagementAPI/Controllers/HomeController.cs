@@ -5,6 +5,7 @@ using ContactManagementAPI.Models;
 using ContactManagementAPI.Services;
 using ContactManagementAPI.Security;
 using System.Globalization;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace ContactManagementAPI.Controllers
 {
@@ -1038,6 +1039,19 @@ namespace ContactManagementAPI.Controllers
                 .FirstOrDefault();
 
             return directMatch;
+        }
+
+        [HttpGet]
+        public IActionResult Error()
+        {
+            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var statusCode = Response?.StatusCode > 0 ? Response.StatusCode : StatusCodes.Status500InternalServerError;
+
+            ViewData["StatusCode"] = statusCode;
+            ViewData["Path"] = exceptionFeature?.Path ?? HttpContext.Request.Path.Value ?? "/";
+            ViewData["ErrorMessage"] = exceptionFeature?.Error?.Message ?? "An unexpected error occurred.";
+
+            return View();
         }
 
         #endregion
