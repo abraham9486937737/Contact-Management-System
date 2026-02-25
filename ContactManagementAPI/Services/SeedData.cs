@@ -473,12 +473,26 @@ namespace ContactManagementAPI.Services
 
         private static string? UseIfMissing(string? target, string? value)
         {
-            if (string.IsNullOrWhiteSpace(target) && !string.IsNullOrWhiteSpace(value))
+            if (IsMissingValue(target) && !string.IsNullOrWhiteSpace(value))
             {
                 return value;
             }
 
             return target;
+        }
+
+        private static bool IsMissingValue(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            var trimmed = value.Trim();
+            return trimmed == "-" ||
+                   trimmed.Equals("n/a", StringComparison.OrdinalIgnoreCase) ||
+                   trimmed.Equals("na", StringComparison.OrdinalIgnoreCase) ||
+                   trimmed.Equals("not available", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string BuildGroupMobile(int groupId)
