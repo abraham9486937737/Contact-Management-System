@@ -163,15 +163,24 @@ namespace ContactManagementAPI.Controllers
         {
             var currentUser = _userContextService.CurrentUser;
             var isSuperAdmin = IsSuperAdminUser(currentUser);
+            var normalizedUserName = NormalizeText(model.UserName);
+            var normalizedPassword = (model.Password ?? string.Empty).Trim();
+
+            model.UserName = model.UserName?.Trim() ?? string.Empty;
 
             if (string.Equals(model.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase) && !isSuperAdmin)
             {
                 ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "Super Admin user name is reserved.");
             }
 
-            if (_context.AppUsers.Any(u => u.UserName == model.UserName))
+            if (_context.AppUsers.Any(u => NormalizeText(u.UserName) == normalizedUserName))
             {
                 ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "User name already exists.");
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedPassword))
+            {
+                ModelState.AddModelError(nameof(UserCreateViewModel.Password), "Password is required.");
             }
 
             if (!ModelState.IsValid)
@@ -191,7 +200,7 @@ namespace ContactManagementAPI.Controllers
                 UpdatedAt = DateTime.Now
             };
 
-            user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
+            user.PasswordHash = _passwordHasher.HashPassword(user, normalizedPassword);
             _context.AppUsers.Add(user);
             _context.SaveChanges();
 
@@ -202,7 +211,9 @@ namespace ContactManagementAPI.Controllers
                 performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
                 details: $"Created user '{user.UserName}' in group id '{user.GroupId}'.");
 
-            TempData["SuccessMessage"] = "User created successfully.";
+            TempData["SuccessMessage"] = isSuperAdmin
+                ? $"User created successfully. Password for '{user.UserName}' is: {normalizedPassword}"
+                : "User created successfully.";
             return RedirectToAction("Users");
         }
 
@@ -242,6 +253,9 @@ namespace ContactManagementAPI.Controllers
         {
             var currentUser = _userContextService.CurrentUser;
             var isSuperAdmin = IsSuperAdminUser(currentUser);
+            var normalizedUserName = NormalizeText(model.UserName);
+
+            model.UserName = model.UserName?.Trim() ?? string.Empty;
 
             var user = _context.AppUsers.FirstOrDefault(u => u.Id == model.Id);
             if (user == null)
@@ -252,7 +266,7 @@ namespace ContactManagementAPI.Controllers
                 return NotFound();
             }
 
-            if (_context.AppUsers.Any(u => u.UserName == model.UserName && u.Id != model.Id))
+            if (_context.AppUsers.Any(u => NormalizeText(u.UserName) == normalizedUserName && u.Id != model.Id))
             {
                 ModelState.AddModelError(nameof(UserEditViewModel.UserName), "User name already exists.");
             }
@@ -301,9 +315,11 @@ namespace ContactManagementAPI.Controllers
                 }
             }
 
+            var resetPassword = string.Empty;
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
             {
-                user.PasswordHash = _passwordHasher.HashPassword(user, model.NewPassword);
+                resetPassword = model.NewPassword.Trim();
+                user.PasswordHash = _passwordHasher.HashPassword(user, resetPassword);
             }
 
             _context.SaveChanges();
@@ -315,7 +331,9 @@ namespace ContactManagementAPI.Controllers
                 performedBy: _userContextService.CurrentUser?.UserName ?? "Unknown",
                 details: $"Edited user '{user.UserName}' (Active: {user.IsActive}, Admin: {user.IsAdmin}).");
 
-            TempData["SuccessMessage"] = "User updated successfully.";
+            TempData["SuccessMessage"] = isSuperAdmin && !string.IsNullOrWhiteSpace(resetPassword)
+                ? $"User updated successfully. New password for '{user.UserName}' is: {resetPassword}"
+                : "User updated successfully.";
             return RedirectToAction("Users");
         }
 

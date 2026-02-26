@@ -13,6 +13,11 @@ namespace ContactManagementAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly PasswordHasher<AppUser> _passwordHasher = new();
 
+        private static string NormalizeUserName(string? userName)
+        {
+            return (userName ?? string.Empty).Trim().ToUpperInvariant();
+        }
+
         public AccountController(ApplicationDbContext context)
         {
             _context = context;
@@ -31,9 +36,18 @@ namespace ContactManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            var normalizedUserName = NormalizeUserName(model.UserName);
+            var normalizedPassword = (model.Password ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(normalizedUserName) || string.IsNullOrWhiteSpace(normalizedPassword))
+            {
+                ModelState.AddModelError(string.Empty, "Invalid username or password.");
+                return View(model);
+            }
+
             var user = _context.AppUsers
                 .Include(u => u.Group)
-                .FirstOrDefault(u => u.UserName == model.UserName);
+                .FirstOrDefault(u => u.UserName.ToUpper() == normalizedUserName);
 
             if (user == null || !user.IsActive)
             {
@@ -41,11 +55,21 @@ namespace ContactManagementAPI.Controllers
                 return View(model);
             }
 
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, normalizedPassword);
             if (result == PasswordVerificationResult.Failed)
             {
-                ModelState.AddModelError(string.Empty, "Invalid username or password.");
-                return View(model);
+                var isLegacyPlainTextPassword = !string.IsNullOrWhiteSpace(user.PasswordHash) &&
+                                                !user.PasswordHash.StartsWith("AQAAAA", StringComparison.Ordinal);
+
+                if (!isLegacyPlainTextPassword || !string.Equals(user.PasswordHash.Trim(), normalizedPassword, StringComparison.Ordinal))
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid username or password.");
+                    return View(model);
+                }
+
+                user.PasswordHash = _passwordHasher.HashPassword(user, normalizedPassword);
+                user.UpdatedAt = DateTime.Now;
+                _context.SaveChanges();
             }
 
             HttpContext.Session.SetInt32(SessionKeys.UserId, user.Id);

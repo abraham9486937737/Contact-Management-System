@@ -9,6 +9,11 @@ namespace ContactManagementAPI.Services
     {
         private readonly ApplicationDbContext _context;
 
+        private static bool IsSuperAdminUser(AppUser? user)
+        {
+            return user != null && string.Equals(user.UserName, SeedData.SuperAdminUserName, System.StringComparison.OrdinalIgnoreCase);
+        }
+
         public AuthorizationService(ApplicationDbContext context)
         {
             _context = context;
@@ -20,7 +25,13 @@ namespace ContactManagementAPI.Services
                 .AsNoTracking()
                 .FirstOrDefault(u => u.Id == userId);
 
-            if (user == null || !user.IsActive)
+            if (user == null)
+                return false;
+
+            if (IsSuperAdminUser(user))
+                return true;
+
+            if (!user.IsActive)
                 return false;
 
             if (user.IsAdmin)
@@ -45,6 +56,9 @@ namespace ContactManagementAPI.Services
             var user = _context.AppUsers
                 .AsNoTracking()
                 .FirstOrDefault(u => u.Id == userId);
+
+            if (IsSuperAdminUser(user))
+                return true;
 
             return user?.IsAdmin == true && user.IsActive;
         }
