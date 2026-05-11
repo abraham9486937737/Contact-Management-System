@@ -186,6 +186,33 @@ dotnet publish -c Release -r win-x64 --self-contained
 - Use Inno Setup script provided
 - Distribute `.exe` installer file
 
+**Step 2 (Alternative): Host with IIS on the same PC**
+
+Run as Administrator from repository root:
+
+```powershell
+Set-Location e:\Contact_Management_System
+.\Setup-IIS-Hosting.ps1 -SiteName "ContactManagementSystem" -AppPoolName "ContactManagementSystemPool" -Port 8080
+```
+
+Open in browser:
+
+```text
+http://localhost:8080
+```
+
+For updates after code changes:
+
+```powershell
+Set-Location e:\Contact_Management_System
+.\Setup-IIS-Hosting.ps1 -SiteName "ContactManagementSystem" -AppPoolName "ContactManagementSystemPool" -Port 8080 -ForceRecreateSite
+```
+
+Notes:
+- Install ASP.NET Core Hosting Bundle before IIS hosting.
+- For phone access on same network, use `http://<your-pc-ip>:8080`.
+- Allow inbound TCP 8080 in Windows Firewall if needed.
+
 **Step 3: User Installation**
 - Double-click installer
 - Select installation directory
