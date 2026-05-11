@@ -31,6 +31,35 @@ wwwroot/uploads/documents/*
 !wwwroot/uploads/photos/.gitkeep
 !wwwroot/uploads/documents/.gitkeep
 
+# App uploads in project output paths
+ContactManagementAPI/wwwroot/uploads/photos/*
+ContactManagementAPI/wwwroot/uploads/documents/*
+!ContactManagementAPI/wwwroot/uploads/photos/.gitkeep
+!ContactManagementAPI/wwwroot/uploads/documents/.gitkeep
+Published/wwwroot/uploads/photos/*
+Published/wwwroot/uploads/documents/*
+!Published/wwwroot/uploads/photos/.gitkeep
+!Published/wwwroot/uploads/documents/.gitkeep
+
+# Generated publish/deployment outputs
+Published/**
+!Published/README_FOR_DIRECTORS.txt
+!Published/Run.bat
+!Published/appsettings.json
+!Published/web.config
+Deployment/ContactManagementSystem-win-x64/**
+
+# Generated exports and temporary input/output files
+contact_details_with_photos_*.json
+personal_contacts_with_photos_*.json
+google_contacts.csv
+google_contacts_cleaned_for_import.csv
+google_contacts_cleaned_for_import_strict.csv
+google_contacts_cleaning_report.json
+google_contacts_ready_report.json
+%s
+ContactManagementAPI/%s
+
 # Database files
 *.mdf
 *.ldf
