@@ -131,18 +131,18 @@ namespace ContactManagementAPI.Controllers
             var currentUser = _userContextService.CurrentUser;
             var isSuperAdmin = IsSuperAdminUser(currentUser);
 
-            var usersQuery = _context.AppUsers
+            var users = _context.AppUsers
                 .Include(u => u.Group)
-                .AsQueryable();
+                .OrderBy(u => u.UserName)
+                .ToList();
 
             if (!isSuperAdmin)
             {
-                usersQuery = usersQuery.Where(u => !string.Equals(u.UserName, SeedData.SuperAdminUserName, StringComparison.OrdinalIgnoreCase));
+                var normalizedSuperAdminUserName = NormalizeText(SeedData.SuperAdminUserName);
+                users = users
+                    .Where(u => NormalizeText(u.UserName) != normalizedSuperAdminUserName)
+                    .ToList();
             }
-
-            var users = usersQuery
-                .OrderBy(u => u.UserName)
-                .ToList();
 
             ViewBag.IsSuperAdmin = isSuperAdmin;
 
@@ -173,7 +173,7 @@ namespace ContactManagementAPI.Controllers
                 ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "Super Admin user name is reserved.");
             }
 
-            if (_context.AppUsers.Any(u => NormalizeText(u.UserName) == normalizedUserName))
+            if (_context.AppUsers.Any(u => (u.UserName ?? string.Empty).ToUpper() == normalizedUserName))
             {
                 ModelState.AddModelError(nameof(UserCreateViewModel.UserName), "User name already exists.");
             }
@@ -266,7 +266,7 @@ namespace ContactManagementAPI.Controllers
                 return NotFound();
             }
 
-            if (_context.AppUsers.Any(u => NormalizeText(u.UserName) == normalizedUserName && u.Id != model.Id))
+            if (_context.AppUsers.Any(u => (u.UserName ?? string.Empty).ToUpper() == normalizedUserName && u.Id != model.Id))
             {
                 ModelState.AddModelError(nameof(UserEditViewModel.UserName), "User name already exists.");
             }

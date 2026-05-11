@@ -34,15 +34,27 @@ namespace ContactManagementAPI.Controllers
             _adminHistoryService = adminHistoryService;
         }
 
-        // GET: Home/Index - Display all contacts with search functionality
+        // GET: Home/Index - Display contacts with search, filters, sorting, and pagination
         [RequireRight(RightsCatalog.ContactsView)]
-        public async Task<IActionResult> Index(string searchTerm = "")
+        public async Task<IActionResult> Index(
+            string searchTerm = "",
+            string nameFilter = "",
+            string emailFilter = "",
+            string phoneFilter = "",
+            string whatsAppFilter = "",
+            string cityFilter = "",
+            string groupFilter = "",
+            string sortBy = "name",
+            string sortDir = "asc",
+            int page = 1)
         {
             var currentUser = _userContextService.CurrentUser;
             if (currentUser == null)
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            const int pageSize = 50;
 
             var contacts = ApplyContactScope(
                     _context.Contacts
@@ -62,8 +74,93 @@ namespace ContactManagementAPI.Controllers
                     (c.Mobile3 != null && c.Mobile3.Contains(searchTerm)));
             }
 
+            if (!string.IsNullOrWhiteSpace(nameFilter))
+            {
+                contacts = contacts.Where(c =>
+                    c.FirstName.Contains(nameFilter) ||
+                    (c.LastName != null && c.LastName.Contains(nameFilter)) ||
+                    (c.NickName != null && c.NickName.Contains(nameFilter)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(emailFilter))
+            {
+                contacts = contacts.Where(c => c.Email != null && c.Email.Contains(emailFilter));
+            }
+
+            if (!string.IsNullOrWhiteSpace(phoneFilter))
+            {
+                contacts = contacts.Where(c =>
+                    (c.Mobile1 != null && c.Mobile1.Contains(phoneFilter)) ||
+                    (c.Mobile2 != null && c.Mobile2.Contains(phoneFilter)) ||
+                    (c.Mobile3 != null && c.Mobile3.Contains(phoneFilter)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(whatsAppFilter))
+            {
+                contacts = contacts.Where(c => c.WhatsAppNumber != null && c.WhatsAppNumber.Contains(whatsAppFilter));
+            }
+
+            if (!string.IsNullOrWhiteSpace(cityFilter))
+            {
+                contacts = contacts.Where(c => c.City != null && c.City.Contains(cityFilter));
+            }
+
+            if (!string.IsNullOrWhiteSpace(groupFilter))
+            {
+                contacts = contacts.Where(c => c.Group != null && c.Group.Name.Contains(groupFilter));
+            }
+
+            var isDescending = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
+
+            contacts = sortBy.ToLowerInvariant() switch
+            {
+                "email" => isDescending
+                    ? contacts.OrderByDescending(c => c.Email)
+                    : contacts.OrderBy(c => c.Email),
+                "phone" => isDescending
+                    ? contacts.OrderByDescending(c => c.Mobile1)
+                    : contacts.OrderBy(c => c.Mobile1),
+                "whatsapp" => isDescending
+                    ? contacts.OrderByDescending(c => c.WhatsAppNumber)
+                    : contacts.OrderBy(c => c.WhatsAppNumber),
+                "city" => isDescending
+                    ? contacts.OrderByDescending(c => c.City)
+                    : contacts.OrderBy(c => c.City),
+                "group" => isDescending
+                    ? contacts.OrderByDescending(c => c.Group != null ? c.Group.Name : string.Empty)
+                    : contacts.OrderBy(c => c.Group != null ? c.Group.Name : string.Empty),
+                "updated" => isDescending
+                    ? contacts.OrderByDescending(c => c.UpdatedAt)
+                    : contacts.OrderBy(c => c.UpdatedAt),
+                _ => isDescending
+                    ? contacts.OrderByDescending(c => c.FirstName).ThenByDescending(c => c.LastName)
+                    : contacts.OrderBy(c => c.FirstName).ThenBy(c => c.LastName)
+            };
+
+            var totalCount = await contacts.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            var currentPage = Math.Min(Math.Max(page, 1), totalPages);
+
+            var pagedContacts = await contacts
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
             ViewBag.SearchTerm = searchTerm;
-            return View(await contacts.OrderByDescending(c => c.UpdatedAt).ToListAsync());
+            ViewBag.NameFilter = nameFilter;
+            ViewBag.EmailFilter = emailFilter;
+            ViewBag.PhoneFilter = phoneFilter;
+            ViewBag.WhatsAppFilter = whatsAppFilter;
+            ViewBag.CityFilter = cityFilter;
+            ViewBag.GroupFilter = groupFilter;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortDir = isDescending ? "desc" : "asc";
+            ViewBag.Page = currentPage;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = totalPages;
+
+            return View(pagedContacts);
         }
 
         // GET: Home/Details/5

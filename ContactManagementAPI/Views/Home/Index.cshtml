@@ -3,11 +3,50 @@
 @using System.Linq
 @{
     ViewData["Title"] = "All Contacts";
-    var searchTerm = ViewBag.SearchTerm ?? "";
+    var searchTerm = (string)(ViewBag.SearchTerm ?? "");
+    var nameFilter = (string)(ViewBag.NameFilter ?? "");
+    var emailFilter = (string)(ViewBag.EmailFilter ?? "");
+    var phoneFilter = (string)(ViewBag.PhoneFilter ?? "");
+    var whatsAppFilter = (string)(ViewBag.WhatsAppFilter ?? "");
+    var cityFilter = (string)(ViewBag.CityFilter ?? "");
+    var groupFilter = (string)(ViewBag.GroupFilter ?? "");
+    var sortBy = (string)(ViewBag.SortBy ?? "name");
+    var sortDir = (string)(ViewBag.SortDir ?? "asc");
+    var listedCount = Model.Count();
+    var currentPage = (int)(ViewBag.Page ?? 1);
+    var pageSize = (int)(ViewBag.PageSize ?? 50);
+    var totalCount = (int)(ViewBag.TotalCount ?? listedCount);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+    var startItem = totalCount == 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+    var endItem = totalCount == 0 ? 0 : startItem + listedCount - 1;
 
-    // Default ordering: by Name ascending (FirstName then LastName)
-    var sortedModel = Model.OrderBy(c => ((c.FirstName ?? "").Trim() + " " + (c.LastName ?? "").Trim()).Trim());
-    var listedCount = sortedModel.Count();
+    string BuildIndexUrl(int targetPage, string? targetSortBy = null, string? targetSortDir = null)
+    {
+        return Url.Action("Index", "Home", new
+        {
+            searchTerm = searchTerm,
+            nameFilter = nameFilter,
+            emailFilter = emailFilter,
+            phoneFilter = phoneFilter,
+            whatsAppFilter = whatsAppFilter,
+            cityFilter = cityFilter,
+            groupFilter = groupFilter,
+            sortBy = targetSortBy ?? sortBy,
+            sortDir = targetSortDir ?? sortDir,
+            page = targetPage
+        }) ?? "/home/index";
+    }
+
+    string BuildSortUrl(string column)
+    {
+        var nextDir = string.Equals(sortBy, column, StringComparison.OrdinalIgnoreCase) &&
+                  string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase)
+            ? "desc"
+            : "asc";
+
+        return BuildIndexUrl(1, column, nextDir);
+    }
+
 }
 
 @Html.AntiForgeryToken()
@@ -63,6 +102,14 @@
 
     <div class="search-container" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <form method="get" action="/home/index" class="search-form">
+            <input type="hidden" name="nameFilter" value="@nameFilter" />
+            <input type="hidden" name="emailFilter" value="@emailFilter" />
+            <input type="hidden" name="phoneFilter" value="@phoneFilter" />
+            <input type="hidden" name="whatsAppFilter" value="@whatsAppFilter" />
+            <input type="hidden" name="cityFilter" value="@cityFilter" />
+            <input type="hidden" name="groupFilter" value="@groupFilter" />
+            <input type="hidden" name="sortBy" value="@sortBy" />
+            <input type="hidden" name="sortDir" value="@sortDir" />
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div style="flex: 1;">
                     <input type="text" name="searchTerm" placeholder="Search by name, email, or phone..." 
@@ -74,7 +121,7 @@
                 </button>
                 @if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    <a href="/home/index" class="btn btn-secondary" style="white-space: nowrap;">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-secondary" style="white-space: nowrap;">
                         <i class="fas fa-times"></i> Clear
                     </a>
                 }
@@ -88,7 +135,7 @@
         }
     </div>
 
-    @if (!sortedModel.Any())
+    @if (!Model.Any())
     {
         <div class="no-contacts">
             <i class="fas fa-inbox"></i>
@@ -118,6 +165,11 @@
 
         <style>
             /* Contacts grid styling: header, zebra rows and hover (use high specificity to override Bootstrap) */
+            .contacts-table {
+                table-layout: fixed;
+                width: 100%;
+            }
+
             .contacts-table thead th {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
                 color: #ffffff !important;
@@ -125,10 +177,27 @@
             }
             .contacts-table thead th .form-check-input { transform: scale(1.05); margin-top: 0; }
 
+            .contacts-table th,
+            .contacts-table td {
+                vertical-align: middle;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                padding: 0.55rem 0.45rem;
+            }
+
+            .contacts-table .form-control-sm {
+                min-width: 0;
+                padding: 0.3rem 0.45rem;
+            }
+
+            .contacts-table-wrapper .table-responsive {
+                overflow-x: hidden;
+            }
+
             .contacts-table tbody tr:nth-of-type(odd) td { background-color: #f3f7fb !important; color: #212529 !important; }
             .contacts-table tbody tr:nth-of-type(even) td { background-color: #ffffff !important; color: #212529 !important; }
             .contacts-table tbody tr:hover td { background-color: #eef4ff !important; color: #212529 !important; }
-            .contacts-table th, .contacts-table td { vertical-align: middle; }
         </style>
 
         <style>
@@ -143,6 +212,19 @@
         </style>
 
         <div class="contacts-table-wrapper">
+            @{
+                var sortUrlName = BuildSortUrl("name");
+                var sortUrlEmail = BuildSortUrl("email");
+                var sortUrlPhone = BuildSortUrl("phone");
+                var sortUrlWhatsApp = BuildSortUrl("whatsapp");
+                var sortUrlCity = BuildSortUrl("city");
+                var sortUrlGroup = BuildSortUrl("group");
+            }
+            <form id="gridFilterForm" method="get" action="/home/index">
+                <input type="hidden" name="searchTerm" value="@searchTerm" />
+                <input type="hidden" name="sortBy" value="@sortBy" />
+                <input type="hidden" name="sortDir" value="@sortDir" />
+            </form>
             <div class="table-responsive">
                 <table class="table table-hover table-striped contacts-table" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
@@ -153,22 +235,54 @@
                                 <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" title="Select All">
                             </th>
                         }
-                        <th style="width: 60px;">Photo</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>WhatsApp</th>
-                        <th>City</th>
-                        <th>Group</th>
-                        <th style="width: 180px; text-align: center;">Actions</th>
+                        <th style="width: 55px;">S.No</th>
+                        <th style="width: 70px;">Photo</th>
+                        <th><a href="@sortUrlName" style="color: white; text-decoration: none;">Name</a></th>
+                        <th><a href="@sortUrlEmail" style="color: white; text-decoration: none;">Email</a></th>
+                        <th><a href="@sortUrlPhone" style="color: white; text-decoration: none;">Phone</a></th>
+                        <th><a href="@sortUrlWhatsApp" style="color: white; text-decoration: none;">WhatsApp</a></th>
+                        <th><a href="@sortUrlCity" style="color: white; text-decoration: none;">City</a></th>
+                        <th><a href="@sortUrlGroup" style="color: white; text-decoration: none;">Group</a></th>
+                        <th style="width: 120px; text-align: center;">Actions</th>
+                    </tr>
+                    <tr>
+                        @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
+                        {
+                            <th></th>
+                        }
+                        <th></th>
+                        <th></th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="nameFilter" value="@nameFilter" placeholder="Name" class="form-control form-control-sm" />
+                        </th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="emailFilter" value="@emailFilter" placeholder="Email" class="form-control form-control-sm" />
+                        </th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="phoneFilter" value="@phoneFilter" placeholder="Phone" class="form-control form-control-sm" />
+                        </th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="whatsAppFilter" value="@whatsAppFilter" placeholder="WA" class="form-control form-control-sm" />
+                        </th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="cityFilter" value="@cityFilter" placeholder="City" class="form-control form-control-sm" />
+                        </th>
+                        <th>
+                            <input form="gridFilterForm" type="text" name="groupFilter" value="@groupFilter" placeholder="Group" class="form-control form-control-sm" />
+                        </th>
+                        <th style="text-align:center; white-space: nowrap;">
+                            <button form="gridFilterForm" type="submit" class="btn btn-sm btn-light" title="Apply Filters">Apply</button>
+                            <a href="@Url.Action("Index", "Home", new { searchTerm = searchTerm, sortBy = sortBy, sortDir = sortDir })" class="btn btn-sm btn-outline-light" title="Clear Filters">Clear</a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    @{ var contactsList = sortedModel.ToList(); }
+                    @{ var contactsList = Model.ToList(); }
                     @for (var __i = 0; __i < contactsList.Count; __i++)
                     {
                         var contact = contactsList[__i];
                         var _rowBg = (__i % 2 == 0) ? "#f3f7fb" : "#ffffff";
+                        var serialNo = startItem + __i;
                     
                         <tr style="background-color:@_rowBg;">
                             @if (UserContext.IsSuperAdmin && UserContext.HasRight(RightsCatalog.ContactsDelete))
@@ -177,6 +291,9 @@
                                     <input type="checkbox" class="contact-checkbox form-check-input" data-contact-id="@contact.Id" style="cursor: pointer;">
                                 </td>
                             }
+                            <td style="vertical-align: middle; text-align: center; font-weight: 600;">
+                                @serialNo
+                            </td>
                             <td style="vertical-align: middle;">
                                 @if (!string.IsNullOrEmpty(contact.PhotoPath))
                                 {
@@ -280,7 +397,7 @@
 
         <!-- Mobile / Tablet: card view (visible on small screens) -->
         <div class="contacts-cards" style="display:none;">
-            @foreach (var contact in sortedModel)
+            @foreach (var contact in Model)
             {
                 <div class="card mb-2">
                     <div class="card-body d-flex align-items-center" style="gap:12px;">
@@ -330,8 +447,31 @@
             }
         </div>
 
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Contacts pagination" style="margin-top: 16px;">
+                <ul class="pagination justify-content-center flex-wrap" style="gap: 6px;">
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@(currentPage <= 1 ? "#" : BuildIndexUrl(1))" tabindex="@(currentPage <= 1 ? "-1" : null)">First</a>
+                    </li>
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@(currentPage <= 1 ? "#" : BuildIndexUrl(currentPage - 1))" tabindex="@(currentPage <= 1 ? "-1" : null)">Previous</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Page @currentPage of @totalPages</span>
+                    </li>
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@(currentPage >= totalPages ? "#" : BuildIndexUrl(currentPage + 1))" tabindex="@(currentPage >= totalPages ? "-1" : null)">Next</a>
+                    </li>
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@(currentPage >= totalPages ? "#" : BuildIndexUrl(totalPages))" tabindex="@(currentPage >= totalPages ? "-1" : null)">Last</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+
         <div id="contactsCountLabel" class="text-muted" style="margin-top: 10px; font-size: 13px;">
-            Showing <strong>@listedCount</strong> contact(s)
+            Showing <strong>@startItem-@endItem</strong> of <strong>@totalCount</strong> contact(s)
             @if (!string.IsNullOrEmpty(searchTerm))
             {
                 <span>for "<strong>@searchTerm</strong>"</span>
