@@ -60,6 +60,11 @@ google_contacts_ready_report.json
 %s
 ContactManagementAPI/%s
 
+# Large packaged artifacts
+Published.rar
+Deployment/ContactManagementSystem-win-x64.zip
+Installers/ContactManagementSystem-Installer-*.exe
+
 # Database files
 *.mdf
 *.ldf
